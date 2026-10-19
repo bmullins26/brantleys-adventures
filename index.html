@@ -152,6 +152,20 @@
   .modal-btn:active { transform: scale(.95); }
   .modal-btn.yes { background: #ff6b6b; color: #fff; }
   .modal-btn.no { background: #dcedff; color: #3a2b00; }
+
+  .home-card.wide { grid-column: 1 / -1; }
+  /* --- tic tac toe --- */
+  .ttt-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 330px; margin: 20px auto; }
+  .ttt-cell { aspect-ratio: 1 / 1; font-size: 3.2rem; font-family: inherit; font-weight: 800;
+    border: 0; border-radius: 20px; background: #fff; box-shadow: 0 4px 0 rgba(0,0,0,.08);
+    cursor: pointer; color: #3a2b00; line-height: 1; }
+  .ttt-cell:active { transform: scale(.93); }
+  .ttt-cell.x { color: #ff6b6b; }
+  .ttt-cell.o { color: #4dabf7; }
+  .ttt-cell.win { background: #fff3bf; animation: tttpop .45s; }
+  @keyframes tttpop { 50% { transform: scale(1.12); } }
+  .ttt-status { font-size: 1.35rem; font-weight: 800; min-height: 2.2em; color: #3a2b00; }
+  .ttt-controls { display: flex; gap: 12px; justify-content: center; margin: 8px 0 4px; }
 </style>
 </head>
 <body>
@@ -169,8 +183,31 @@
     <button class="home-card tint-peach" onclick="show('numbers')"><span class="hc-icon">🔢</span><span class="hc-title">Numbers</span><span class="hc-sub">Count 1 to 20</span></button>
     <button class="home-card tint-pink" onclick="show('color')"><span class="hc-icon">🎨</span><span class="hc-title">Color Fun</span><span class="hc-sub">Paint pictures</span></button>
     <button class="home-card tint-green" onclick="show('song')"><span class="hc-icon">🎵</span><span class="hc-title">Jam Out</span><span class="hc-sub">Sing with Brantley</span></button>
+    <button class="home-card tint-purple wide" onclick="show('games')"><span class="hc-icon">🎮</span><span class="hc-title">Games</span><span class="hc-sub">Tic tac toe &amp; more</span></button>
   </div>
-  <div class="ver">v25</div>
+  <div class="ver">v26</div>
+</div>
+
+<!-- GAMES -->
+<div id="games" class="screen">
+  <button class="back-btn" onclick="show('home')">⬅ Home</button>
+  <h1>🎮 Games</h1>
+  <p class="subtitle">Pick how to play!</p>
+  <div class="home-grid">
+    <button class="home-card tint-yellow" onclick="TicTacToe.start('solo')"><span class="hc-icon">🧒</span><span class="hc-title">Solo</span><span class="hc-sub">Practice board</span></button>
+    <button class="home-card tint-blue" onclick="TicTacToe.start('bot')"><span class="hc-icon">🤖</span><span class="hc-title">Vs Bot</span><span class="hc-sub">Beat the computer</span></button>
+    <button class="home-card tint-green wide" onclick="TicTacToe.start('friend')"><span class="hc-icon">👥</span><span class="hc-title">2 Players</span><span class="hc-sub">Play with a friend</span></button>
+  </div>
+</div>
+
+<div id="tictactoe" class="screen">
+  <button class="back-btn" onclick="show('games')">⬅ Games</button>
+  <h1 id="tttTitle">⭕ Tic Tac Toe</h1>
+  <p id="tttStatus" class="ttt-status">X goes first!</p>
+  <div class="ttt-board" id="tttBoard"></div>
+  <div class="ttt-controls">
+    <button class="menu-btn" id="tttAgainBtn" onclick="TicTacToe.reset()" style="display:none">🔁 Play Again</button>
+  </div>
 </div>
 
 <!-- ALPHABET -->
@@ -281,6 +318,105 @@
     try { if (window.activeClip) activeClip.pause(); } catch (e) {}
   });
 })();
+
+/* --- Tic Tac Toe: solo practice, vs bot, 2 players --- */
+const TicTacToe = {
+  mode: 'bot', board: [], turn: 'X', over: false, lock: false,
+  LINES: [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]],
+  start(mode) {
+    this.mode = mode;
+    document.getElementById('tttTitle').textContent =
+      mode === 'solo' ? '🧒 Solo Practice' : mode === 'bot' ? '🤖 You vs Bot' : '👥 2 Players';
+    show('tictactoe');
+    this.reset();
+  },
+  reset() {
+    this.board = Array(9).fill('');
+    this.turn = 'X'; this.over = false; this.lock = false;
+    document.getElementById('tttAgainBtn').style.display = 'none';
+    this.status(this.mode === 'bot' ? "Your turn \u2014 you're X!"
+      : this.mode === 'friend' ? 'X goes first!' : 'Tap squares to practice!');
+    this.render(null);
+  },
+  status(t) { document.getElementById('tttStatus').textContent = t; },
+  render(winLine) {
+    const b = document.getElementById('tttBoard');
+    b.innerHTML = '';
+    this.board.forEach((v, i) => {
+      const c = document.createElement('button');
+      c.className = 'ttt-cell' + (v === 'X' ? ' x' : v === 'O' ? ' o' : '')
+        + (winLine && winLine.indexOf(i) >= 0 ? ' win' : '');
+      c.textContent = v;
+      c.setAttribute('aria-label', 'Square ' + (i + 1));
+      c.onclick = () => this.tap(i);
+      b.appendChild(c);
+    });
+  },
+  tap(i) {
+    if (this.over || this.lock || this.board[i]) return;
+    if (this.mode === 'solo') {
+      this.board[i] = this.turn;
+      this.turn = this.turn === 'X' ? 'O' : 'X';
+      this.render(null);
+      return;
+    }
+    this.board[i] = this.turn;
+    this.render(null);
+    const r = this.checkEnd();
+    if (r) return this.finish(r);
+    if (this.mode === 'bot') {
+      this.lock = true;
+      this.status('Bot is thinking\u2026');
+      setTimeout(() => { this.lock = false; this.botMove(); }, 550);
+    } else {
+      this.turn = this.turn === 'X' ? 'O' : 'X';
+      this.status(this.turn + "'s turn");
+    }
+  },
+  botMove() {
+    if (this.over) return;
+    let m = this.findWinning('O');
+    if (m < 0) m = this.findWinning('X');
+    if (m < 0) m = this.pickRandom();
+    this.board[m] = 'O';
+    this.render(null);
+    const r = this.checkEnd();
+    if (r) return this.finish(r);
+    this.status("Your turn \u2014 you're X!");
+  },
+  findWinning(p) {
+    for (const L of this.LINES) {
+      const vs = L.map(i => this.board[i]);
+      if (vs.filter(v => v === p).length === 2 && vs.indexOf('') >= 0) return L[vs.indexOf('')];
+    }
+    return -1;
+  },
+  pickRandom() {
+    const open = this.board.map((v, i) => v === '' ? i : -1).filter(i => i >= 0);
+    if (this.board[4] === '') return 4;
+    const corners = open.filter(i => [0, 2, 6, 8].indexOf(i) >= 0);
+    if (corners.length) return corners[Math.floor(Math.random() * corners.length)];
+    return open[Math.floor(Math.random() * open.length)];
+  },
+  checkEnd() {
+    for (const L of this.LINES) {
+      const a = L[0], b = L[1], c = L[2];
+      if (this.board[a] && this.board[a] === this.board[b] && this.board[a] === this.board[c])
+        return { winner: this.board[a], line: L };
+    }
+    if (this.board.indexOf('') < 0) return { winner: 'tie', line: null };
+    return null;
+  },
+  finish(r) {
+    this.over = true;
+    this.render(r.line);
+    document.getElementById('tttAgainBtn').style.display = '';
+    if (r.winner === 'tie') this.status("It's a tie! \uD83E\uDD1D");
+    else if (this.mode === 'bot') this.status(r.winner === 'X' ? '\uD83C\uDF89 You win!' : '\uD83E\uDD16 Bot wins! Try again!');
+    else this.status('\uD83C\uDF89 ' + r.winner + ' wins!');
+  }
+};
+
 </script>
 
 <!-- COLOR FUN -->
