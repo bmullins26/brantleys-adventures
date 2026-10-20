@@ -166,6 +166,28 @@
   @keyframes tttpop { 50% { transform: scale(1.12); } }
   .ttt-status { font-size: 1.35rem; font-weight: 800; min-height: 2.2em; color: #3a2b00; }
   .ttt-controls { display: flex; gap: 12px; justify-content: center; margin: 8px 0 4px; }
+
+  /* --- rewards --- */
+  .pg-scene { border-radius: 26px; overflow: hidden; margin: 12px 0;
+    background: linear-gradient(#bfe9ff 0 38%, #9ede7a 38% 100%); padding: 18px 12px 14px; }
+  .pg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .pg-tile { background: rgba(255,255,255,.92); border-radius: 18px; padding: 10px 4px 8px;
+    text-align: center; font-weight: 800; color: #3a2b00; font-size: .82rem; position: relative; }
+  .pg-tile .pg-e { font-size: 2.4rem; display: block; line-height: 1.2; }
+  .pg-tile.locked { background: rgba(255,255,255,.45); border: 2px dashed rgba(0,0,0,.25); }
+  .pg-tile.locked .pg-e { filter: grayscale(1); opacity: .45; }
+  .pg-tile .pg-lock { position: absolute; top: 4px; right: 8px; font-size: 1rem; }
+  .pg-kids { text-align: center; font-size: 2rem; margin-top: 10px; }
+  .sticker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0; }
+  .sticker-tile { background: #fff; border-radius: 18px; aspect-ratio: 1/1; display: flex;
+    align-items: center; justify-content: center; font-size: 2.2rem; position: relative;
+    box-shadow: 0 4px 0 rgba(0,0,0,.07); }
+  .sticker-tile.locked { background: rgba(255,255,255,.5); border: 2px dashed rgba(0,0,0,.22); }
+  .sticker-tile.locked .st-e { filter: grayscale(1); opacity: .35; }
+  .sticker-tile .st-lock { position: absolute; bottom: 4px; right: 6px; font-size: .95rem; }
+  .reward-count { text-align: center; font-weight: 800; color: #3a2b00; font-size: 1.05rem; }
+  #rewardBody { font-size: 1.15rem; font-weight: 700; color: #3a2b00; margin-bottom: 18px; line-height: 1.5; }
+  #rewardBody .big { font-size: 3rem; display: block; margin-bottom: 6px; }
 </style>
 </head>
 <body>
@@ -184,8 +206,52 @@
     <button class="home-card tint-pink" onclick="show('color')"><span class="hc-icon">🎨</span><span class="hc-title">Color Fun</span><span class="hc-sub">Paint pictures</span></button>
     <button class="home-card tint-green" onclick="show('song')"><span class="hc-icon">🎵</span><span class="hc-title">Jam Out</span><span class="hc-sub">Sing with Brantley</span></button>
     <button class="home-card tint-purple wide" onclick="show('games')"><span class="hc-icon">🎮</span><span class="hc-title">Games</span><span class="hc-sub">Tic tac toe &amp; more</span></button>
+    <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
-  <div class="ver">v26</div>
+  <div class="ver">v27</div>
+</div>
+
+<!-- REWARDS -->
+<div id="rewards" class="screen">
+  <button class="back-btn" onclick="show('home')">⬅ Home</button>
+  <h1>🏆 My Rewards</h1>
+  <p class="subtitle" id="rewardsStars">⭐ 0 stars</p>
+  <div class="home-grid">
+    <button class="home-card tint-green" onclick="show('playground')"><span class="hc-icon">🏗️</span><span class="hc-title">Playground</span><span class="hc-sub" id="pgCount">0 of 12</span></button>
+    <button class="home-card tint-pink" onclick="show('stickers')"><span class="hc-icon">⭐</span><span class="hc-title">Stickers</span><span class="hc-sub" id="stCount">0 of 20</span></button>
+  </div>
+  <p class="subtitle">Play quizzes to earn stars and prizes!</p>
+</div>
+
+<div id="playground" class="screen">
+  <button class="back-btn" onclick="show('rewards')">⬅ Rewards</button>
+  <h1>🏗️ My Playground</h1>
+  <p class="reward-count" id="pgCount2">0 of 12 pieces</p>
+  <div class="pg-scene">
+    <div class="pg-grid" id="pgGrid"></div>
+    <div class="pg-kids">👦👧🧒</div>
+  </div>
+  <p class="subtitle">Finish quizzes to unlock more pieces!</p>
+</div>
+
+<div id="stickers" class="screen">
+  <button class="back-btn" onclick="show('rewards')">⬅ Rewards</button>
+  <h1>⭐ Sticker Book</h1>
+  <p class="reward-count" id="stCount2">0 of 20 collected</p>
+  <div class="sticker-grid" id="stickerGrid"></div>
+  <p class="subtitle">Earn 25 stars for each new sticker!</p>
+</div>
+
+<!-- reward popup -->
+<div id="rewardModal" class="modal" style="display:none">
+  <div class="modal-card">
+    <div class="modal-title" id="rewardTitle">🎉</div>
+    <div id="rewardBody"></div>
+    <div class="modal-row">
+      <button class="modal-btn yes" id="rewardAgain">🔁 Play Again</button>
+      <button class="modal-btn no" id="rewardMenu">Menu</button>
+    </div>
+  </div>
 </div>
 
 <!-- GAMES -->
@@ -417,6 +483,149 @@ const TicTacToe = {
   }
 };
 
+/* --- Rewards: stars, stickers, playground pieces (localStorage) --- */
+const Rewards = {
+  KEY: 'ba_rewards_v1',
+  STICKERS: [
+    { e: '\u26BE', n: 'Baseball' }, { e: '\uD83C\uDFCE\uFE0F', n: 'RC Car' },
+    { e: '\uD83C\uDFD5\uFE0F', n: 'Tent' }, { e: '\uD83C\uDFCA', n: 'Swim Ring' },
+    { e: '\uD83C\uDFA3', n: 'Fishing Rod' }, { e: '\u2B50', n: 'Brantley' },
+    { e: '\uD83C\uDF80', n: 'Mia' }, { e: '\uD83E\uDDE2', n: 'Jay' },
+    { e: '\uD83D\uDD24', n: 'ABC Blocks' }, { e: '\uD83D\uDD22', n: '123 Balloons' },
+    { e: '\uD83E\uDD96', n: 'Dinosaur' }, { e: '\uD83D\uDE80', n: 'Rocket' },
+    { e: '\uD83D\uDC36', n: 'Puppy' }, { e: '\uD83E\uDD81', n: 'Lion' },
+    { e: '\uD83C\uDF55', n: 'Pizza Slice' }, { e: '\uD83C\uDF08', n: 'Rainbow' },
+    { e: '\uD83C\uDFF0', n: 'Castle' }, { e: '\uD83E\uDD84', n: 'Unicorn' },
+    { e: '\uD83C\uDFB8', n: 'Guitar' }, { e: '\uD83D\uDC51', n: 'Crown' }
+  ],
+  PIECES: {
+    quizTime: [
+      { e: '\uD83D\uDEDD', n: 'Slide' }, { e: '\uD83C\uDFA0', n: 'Swings' },
+      { e: '\u2696\uFE0F', n: 'Seesaw' }, { e: '\uD83C\uDFA1', n: 'Ferris Wheel' }
+    ],
+    matchPairs: [
+      { e: '\uD83C\uDFD6\uFE0F', n: 'Sandbox' }, { e: '\uD83D\uDD73\uFE0F', n: 'Tunnel' },
+      { e: '\uD83E\uDDD7', n: 'Climbing Wall' }, { e: '\uD83D\uDC35', n: 'Monkey Bars' }
+    ],
+    numberQuiz: [
+      { e: '\uD83C\uDF33', n: 'Treehouse' }, { e: '\u26F2', n: 'Fountain' },
+      { e: '\uD83C\uDF38', n: 'Flower Garden' }, { e: '\uD83E\uDDFA', n: 'Picnic Table' }
+    ]
+  },
+  data: null,
+  load() {
+    try { this.data = JSON.parse(localStorage.getItem(this.KEY)); } catch (e) { this.data = null; }
+    if (!this.data || typeof this.data.stars !== 'number') {
+      this.data = { stars: 0, stickers: [], pieces: { quizTime: [], matchPairs: [], numberQuiz: [] }, lastPieceDate: {} };
+    }
+  },
+  save() { try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) {} },
+  today() { return new Date().toISOString().slice(0, 10); },
+  addStar() {
+    this.data.stars++;
+    let newSticker = null;
+    const earned = Math.floor(this.data.stars / 25);
+    while (this.data.stickers.length < earned && this.data.stickers.length < this.STICKERS.length) {
+      newSticker = this.STICKERS[this.data.stickers.length];
+      this.data.stickers.push(this.data.stickers.length);
+    }
+    this.save();
+    this.renderCounts();
+    return newSticker;
+  },
+  finishRound(quizId) {
+    const list = this.PIECES[quizId], owned = this.data.pieces[quizId];
+    if (owned.length >= list.length) return { piece: null, reason: 'complete' };
+    if (this.data.lastPieceDate[quizId] === this.today()) return { piece: null, reason: 'today' };
+    const piece = list[owned.length];
+    owned.push(owned.length);
+    this.data.lastPieceDate[quizId] = this.today();
+    this.save();
+    return { piece: piece, reason: 'earned' };
+  },
+  totalPieces() {
+    return this.data.pieces.quizTime.length + this.data.pieces.matchPairs.length + this.data.pieces.numberQuiz.length;
+  },
+  renderCounts() {
+    const sub = document.getElementById('rewardsSub');
+    if (sub) sub.textContent = '\u2B50 ' + this.data.stars + ' stars';
+    const rs = document.getElementById('rewardsStars');
+    if (rs) rs.textContent = '\u2B50 ' + this.data.stars + ' stars';
+    const pc = document.getElementById('pgCount');
+    if (pc) pc.textContent = this.totalPieces() + ' of 12 pieces';
+    const pc2 = document.getElementById('pgCount2');
+    if (pc2) pc2.textContent = this.totalPieces() + ' of 12 pieces';
+    const sc = document.getElementById('stCount');
+    if (sc) sc.textContent = this.data.stickers.length + ' of 20';
+    const sc2 = document.getElementById('stCount2');
+    if (sc2) sc2.textContent = this.data.stickers.length + ' of 20 collected';
+  },
+  renderPlayground() {
+    const g = document.getElementById('pgGrid');
+    if (!g) return;
+    g.innerHTML = '';
+    ['quizTime', 'matchPairs', 'numberQuiz'].forEach(qid => {
+      this.PIECES[qid].forEach((p, i) => {
+        const owned = this.data.pieces[qid].indexOf(i) >= 0;
+        const d = document.createElement('div');
+        d.className = 'pg-tile' + (owned ? '' : ' locked');
+        d.innerHTML = '<span class="pg-e">' + p.e + '</span>' + p.n
+          + (owned ? '' : '<span class="pg-lock">\uD83D\uDD12</span>');
+        g.appendChild(d);
+      });
+    });
+    this.renderCounts();
+  },
+  renderStickers() {
+    const g = document.getElementById('stickerGrid');
+    if (!g) return;
+    g.innerHTML = '';
+    this.STICKERS.forEach((s, i) => {
+      const owned = this.data.stickers.indexOf(i) >= 0;
+      const d = document.createElement('div');
+      d.className = 'sticker-tile' + (owned ? '' : ' locked');
+      d.innerHTML = '<span class="st-e">' + s.e + '</span>'
+        + (owned ? '' : '<span class="st-lock">\uD83D\uDD12</span>');
+      d.setAttribute('aria-label', s.n);
+      g.appendChild(d);
+    });
+    this.renderCounts();
+  }
+};
+Rewards.load();
+
+/* --- round flow: 10 correct answers = one round --- */
+let pendingStickers = [];
+function rewardStar() {
+  const s = Rewards.addStar();
+  if (s) pendingStickers.push(s);
+}
+function endRound(quizId, againFn, menuId) {
+  const res = Rewards.finishRound(quizId);
+  const got = pendingStickers.splice(0);
+  let body = '';
+  if (res.piece) body += '<span class="big">' + res.piece.e + '</span>You earned the <b>' + res.piece.n + '</b> for your playground!';
+  if (got.length) body += (body ? '<br>' : '') + '<span class="big">' + got[0].e + '</span>New sticker: <b>' + got[0].n + '</b>! (' + Rewards.data.stickers.length + ' of 20)';
+  if (!body) {
+    body = '<span class="big">\u2B50</span>Great job! You earned 10 stars!';
+    if (res.reason === 'today') body += '<br>Come back tomorrow for a new playground piece!';
+    if (res.reason === 'complete') body += '<br>Your playground is complete \u2014 amazing!';
+  }
+  document.getElementById('rewardTitle').textContent = '\uD83C\uDF89 Round Complete!';
+  document.getElementById('rewardBody').innerHTML = body;
+  document.getElementById('rewardModal').style.display = 'flex';
+  if (typeof confettiBurst === 'function') confettiBurst();
+  document.getElementById('rewardAgain').onclick = () => {
+    document.getElementById('rewardModal').style.display = 'none';
+    againFn();
+  };
+  document.getElementById('rewardMenu').onclick = () => {
+    document.getElementById('rewardModal').style.display = 'none';
+    show(menuId);
+  };
+}
+
+
 </script>
 
 <!-- COLOR FUN -->
@@ -593,6 +802,11 @@ function show(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
   window.scrollTo(0, 0);
+  if (typeof Rewards !== "undefined") {
+    if (id === "rewards" || id === "home") Rewards.renderCounts();
+    if (id === "playground") Rewards.renderPlayground();
+    if (id === "stickers") Rewards.renderStickers();
+  }
 }
 
 // Build letter cards (upper/lowercase toggle)
@@ -630,12 +844,20 @@ function setCase(lower) {
 // --- Quiz ---
 let quizTarget = null, stars = 0, quizMode = 'sound';
 
+let roundQ = 0;
 function startQuiz(mode) {
   quizMode = mode || 'sound';
+  roundQ = 0; pendingStickers = [];
   document.getElementById("quizTitle").textContent =
     quizMode === 'match' ? '🔗 Match Pairs' : '🎯 Quiz Time';
   show("quiz");
   nextQuestion(true);
+}
+
+function quizRoundNext() {
+  if (roundQ >= 10) {
+    endRound(quizMode === 'match' ? 'matchPairs' : 'quizTime', () => startQuiz(quizMode), 'alpha');
+  } else nextQuestion(true);
 }
 
 function nextQuestion(sayIt) {
@@ -688,12 +910,13 @@ function answer(btn, picked) {
   if (correct) {
     btn.classList.add("correct");
     stars++;
+    rewardStar(); roundQ++;
     document.getElementById("stars").textContent = "⭐ " + stars;
     const praises = ["Great job!", "Awesome!", "You did it!", "Super!", "Way to go!"];
     const pi = Math.floor(Math.random() * praises.length);
     playSound("praise_" + pi, praises[pi], 1);
     confettiBurst();
-    { const _t = navToken; setTimeout(() => { if (_t === navToken) nextQuestion(true); }, 1600); }
+    { const _t = navToken; setTimeout(() => { if (_t !== navToken) return; quizRoundNext(); }, 1600); }
   } else {
     btn.classList.add("wrong");
     playSound("tryagain", "Try again!", 0.9);
@@ -1231,12 +1454,12 @@ function stopNumberAudio(){try{if(numAudio)numAudio.pause();}catch(e){}numAudio=
 function numFallbackSpeak(n){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(numWords[n]);u.rate=.85;u.pitch=1.1;speechSynthesis.speak(u);}catch(e){}}
 function speakNumber(n){stopNumberAudio();try{if(NUMBER_AUDIO[n]){const a=new Audio(numberClip(n));numAudio=a;a.play().catch(()=>numFallbackSpeak(n));return;}}catch(e){}numFallbackSpeak(n);}
 const numberGrid=document.getElementById('numberGrid');
-let numTarget=1,numScore=0;
+let numTarget=1,numScore=0,numRoundQ=0;
 function renderNumbers(){numberGrid.innerHTML='';for(let n=1;n<=20;n++){const b=document.createElement('button');b.className='number-card';b.innerHTML='<span class="num">'+n+'</span><span class="icons">'+((icons[n-1]+' ').repeat(n))+'</span>';b.setAttribute('aria-label','Number '+n);b.onclick=(()=>{const k=n;return()=>speakNumber(k);})();numberGrid.appendChild(b);}}
-function startNumberQuiz(){numScore=0;document.getElementById('numberStars').textContent='\u2B50 0';show('numberQuiz');nextNumberQuestion();}
+function startNumberQuiz(){numScore=0;numRoundQ=0;pendingStickers=[];document.getElementById('numberStars').textContent='\u2B50 0';show('numberQuiz');nextNumberQuestion();}
 function nextNumberQuestion(){numTarget=1+Math.floor(Math.random()*20);const choices=[numTarget];while(choices.length<4){let n=1+Math.floor(Math.random()*20);if(!choices.includes(n))choices.push(n);}choices.sort(()=>Math.random()-.5);const box=document.getElementById('numberQuizChoices');box.innerHTML='';document.getElementById('numberMessage').textContent='';choices.forEach(n=>{const b=document.createElement('button');b.className='quiz-choice';b.textContent=n;b.onclick=(()=>{const k=n;return()=>checkNumberAnswer(k);})();box.appendChild(b);});setTimeout(()=>speakNumber(numTarget),180);}
 function askNumberAgain(){speakNumber(numTarget);}
-function checkNumberAnswer(n){if(n===numTarget){numScore++;document.getElementById('numberStars').textContent='\u2B50 '+numScore;document.getElementById('numberMessage').textContent='\uD83C\uDF89 That\'s right!';setTimeout(nextNumberQuestion,850);}else{document.getElementById('numberMessage').textContent='Try again! Listen one more time.';setTimeout(askNumberAgain,200);}}
+function checkNumberAnswer(n){if(n===numTarget){numScore++;rewardStar();numRoundQ++;document.getElementById('numberStars').textContent='\u2B50 '+numScore;document.getElementById('numberMessage').textContent='\uD83C\uDF89 That\'s right!';setTimeout(()=>{if(numRoundQ>=10){endRound('numberQuiz',startNumberQuiz,'numbers');}else{nextNumberQuestion();}},850);}else{document.getElementById('numberMessage').textContent='Try again! Listen one more time.';setTimeout(askNumberAgain,200);}}
 
 ColorFun.init();
 renderNumbers();
