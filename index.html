@@ -324,6 +324,21 @@
   .yt-btn { display: block; text-align: center; text-decoration: none; background: #ff0033; color: #fff;
     max-width: 280px; margin: 10px auto 0; }
   .yt-watch { display: block; text-align: center; text-decoration: none; max-width: 280px; margin: 10px auto 0; }
+
+  /* --- Letter Tracing --- */
+  .trace-picker { display: flex; gap: 6px; overflow-x: auto; padding: 6px 2px 10px; max-width: 380px; margin: 0 auto; }
+  .trace-chip { flex: 0 0 auto; min-width: 44px; padding: 8px 4px; border: none; border-radius: 12px;
+    background: #fff; font-family: inherit; font-weight: 800; font-size: 1.05rem; cursor: pointer;
+    box-shadow: 0 2px 0 rgba(0,0,0,.15); color: #333; }
+  .trace-chip.on { background: #ffd43b; }
+  .trace-chip.done { background: #b2f2bb; }
+  #traceWrap { max-width: 360px; margin: 0 auto; }
+  #traceCanvas { width: 100%; height: auto; display: block; border-radius: 18px; background: #fffdf5;
+    touch-action: none; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+  .trace-controls { display: flex; gap: 8px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+  .trace-controls .opt-btn { font-size: 1.05rem; }
+  .pulse { animation: tpulse 0.8s ease-in-out infinite alternate; }
+  @keyframes tpulse { from { transform: scale(1); } to { transform: scale(1.09); } }
 </style>
 </head>
 <body>
@@ -341,13 +356,14 @@
     <button class="home-card tint-peach" onclick="show('numbers')"><span class="hc-icon">🔢</span><span class="hc-title">Numbers</span><span class="hc-sub">Count 1 to 20</span></button>
     <button class="home-card tint-purple" onclick="show('shapesHub')"><span class="hc-icon">🔷</span><span class="hc-title">Shapes</span><span class="hc-sub">Learn &amp; play</span></button>
     <button class="home-card tint-yellow" onclick="show('colorsHub')"><span class="hc-icon">🌈</span><span class="hc-title">Colors</span><span class="hc-sub">Learn &amp; play</span></button>
+    <button class="home-card tint-peach" onclick="show('write')"><span class="hc-icon">✏️</span><span class="hc-title">Write</span><span class="hc-sub">Trace letters</span></button>
     <button class="home-card tint-pink" onclick="show('color')"><span class="hc-icon">🎨</span><span class="hc-title">Color Fun</span><span class="hc-sub">Paint pictures</span></button>
     <button class="home-card tint-green" onclick="show('song')"><span class="hc-icon">🎵</span><span class="hc-title">Jam Out</span><span class="hc-sub" id="jamSub">Sing with Brantley</span></button>
     <button class="home-card tint-purple wide" onclick="show('games')"><span class="hc-icon">🎮</span><span class="hc-title">Games</span><span class="hc-sub">Tic tac toe &amp; more</span></button>
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
   <div style="text-align:center"><button class="grownups-link" onclick="show('grownups')">👤 Grown-ups</button></div>
-  <div class="ver">v2.7</div>
+  <div class="ver">v2.8</div>
 </div>
 
 <!-- REWARDS -->
@@ -528,6 +544,34 @@
     <button onclick="Snake.setDir(-1,0)" aria-label="Left">⬅️</button><button onclick="Snake.setDir(0,1)" aria-label="Down">⬇️</button><button onclick="Snake.setDir(1,0)" aria-label="Right">➡️</button>
   </div>
   <p class="subtitle">Swipe the board or use the arrows!</p>
+</div>
+
+
+<div id="write" class="screen">
+  <button class="back-btn" onclick="show('home')">⬅ Home</button>
+  <h1>✏️ Write</h1>
+  <p class="subtitle">Practice tracing with your finger!</p>
+  <div class="home-grid">
+    <button class="home-card tint-peach wide" onclick="Trace.open('letters')"><span class="hc-icon">🔤</span><span class="hc-title">Trace Letters</span><span class="hc-sub">A to Z</span></button>
+    <button class="home-card tint-blue wide" onclick="Trace.open('name')"><span class="hc-icon">🧒</span><span class="hc-title">Trace My Name</span><span class="hc-sub" id="writeNameSub">My name</span></button>
+  </div>
+</div>
+
+<div id="trace" class="screen">
+  <button class="back-btn" onclick="show('write')">⬅ Write</button>
+  <h1 id="traceTitle">✏️ Trace the Letter</h1>
+  <div id="tracePicker" class="trace-picker"></div>
+  <div id="traceWrap">
+    <canvas id="traceCanvas" width="340" height="360"></canvas>
+  </div>
+  <p class="subtitle" id="traceHint">Trace the letter with your finger!</p>
+  <div class="trace-controls">
+    <button class="opt-btn" onclick="Trace.hear()">🔊 Hear It</button>
+    <button class="opt-btn" onclick="Trace.clear()">🧽 Clear</button>
+    <button class="opt-btn" id="traceCase" onclick="Trace.toggleCase()">abc</button>
+    <button class="opt-btn" id="tracePrev" onclick="Trace.nav(-1)">⬅</button>
+    <button class="opt-btn" id="traceNext" onclick="Trace.nav(1)">Next ➡</button>
+  </div>
 </div>
 
 <div id="alpha" class="screen">
@@ -1485,6 +1529,241 @@ const Snake = {
   }
 };
 
+
+/* --- Letter Tracing: trace letters + your name, coverage-detected --- */
+const Trace = {
+  W: 340, H: 360,
+  mode: 'letters', lower: false, idx: 0, done: false,
+  cv: null, ctx: null, mask: null, mctx: null, ink: null, ictx: null,
+  drawing: false, last: null, boxes: [], passed: {}, namePx: 120, ac: null,
+  store: (() => { try { return JSON.parse(localStorage.getItem('ba_trace_v1') || '{}'); } catch (e) { return {}; } })(),
+  save() { try { localStorage.setItem('ba_trace_v1', JSON.stringify(this.store)); } catch (e) {} },
+  letters() { return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''); },
+  char() { const L = this.letters()[this.idx]; return this.lower ? L.toLowerCase() : L; },
+  kidName() { return (typeof Profile !== 'undefined' && Profile.data && Profile.data.name) ? Profile.data.name : 'Brantley'; },
+  hubName() { const el = document.getElementById('writeNameSub'); if (el) el.textContent = 'Trace ' + this.kidName(); },
+  init() {
+    if (this.cv) return;
+    this.cv = document.getElementById('traceCanvas');
+    if (!this.cv) return;
+    this.ctx = this.cv.getContext('2d');
+    this.mask = document.createElement('canvas'); this.mask.width = this.W; this.mask.height = this.H;
+    this.mctx = this.mask.getContext('2d');
+    this.ink = document.createElement('canvas'); this.ink.width = this.W; this.ink.height = this.H;
+    this.ictx = this.ink.getContext('2d');
+    this.store.letters = this.store.letters || {};
+    this.store.lower = this.store.lower || {};
+    const pt = ev => {
+      const r = this.cv.getBoundingClientRect();
+      return { x: (ev.clientX - r.left) / r.width * this.W, y: (ev.clientY - r.top) / r.height * this.H };
+    };
+    const seg = (a, b) => {
+      for (const c of [this.ctx, this.ictx]) {
+        c.strokeStyle = '#1971c2'; c.lineWidth = 25; c.lineCap = 'round'; c.lineJoin = 'round';
+        c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke();
+      }
+    };
+    this.cv.addEventListener('pointerdown', ev => { ev.preventDefault(); this.drawing = true; this.last = pt(ev); seg(this.last, this.last); });
+    this.cv.addEventListener('pointermove', ev => { if (!this.drawing) return; const p = pt(ev); seg(this.last, p); this.last = p; });
+    const up = () => { if (this.drawing) { this.drawing = false; this.check(); } };
+    this.cv.addEventListener('pointerup', up);
+    this.cv.addEventListener('pointercancel', up);
+    this._seg = seg;
+  },
+  open(mode) {
+    this.mode = mode;
+    this.init();
+    show('trace');
+    const lettersMode = mode === 'letters';
+    document.getElementById('traceTitle').textContent = lettersMode ? '✏️ Trace the Letter' : '✏️ Trace Your Name!';
+    document.getElementById('tracePicker').style.display = lettersMode ? '' : 'none';
+    document.getElementById('traceCase').style.display = lettersMode ? '' : 'none';
+    document.getElementById('tracePrev').style.display = lettersMode ? '' : 'none';
+    document.getElementById('traceNext').style.display = lettersMode ? '' : 'none';
+    if (lettersMode) this.renderPicker();
+    this.load();
+  },
+  renderPicker() {
+    const p = document.getElementById('tracePicker');
+    p.innerHTML = '';
+    const doneMap = this.lower ? this.store.lower : this.store.letters;
+    this.letters().forEach((L, i) => {
+      const b = document.createElement('button');
+      b.className = 'trace-chip' + (i === this.idx ? ' on' : '') + (doneMap[L] ? ' done' : '');
+      b.textContent = (doneMap[L] ? '⭐' : '') + (this.lower ? L.toLowerCase() : L);
+      b.onclick = () => { this.idx = i; this.renderPicker(); this.load(); };
+      p.appendChild(b);
+    });
+  },
+  layoutName() {
+    const name = this.kidName();
+    const m = this.mctx;
+    let px = 132;
+    const measure = () => {
+      m.font = '800 ' + px + 'px "Baloo 2", sans-serif';
+      let total = 0;
+      for (const ch of name) total += m.measureText(ch).width + 6;
+      return total - 6;
+    };
+    let total = measure();
+    while (total > this.W - 28 && px > 38) { px -= 6; total = measure(); }
+    this.namePx = px;
+    this.boxes = [];
+    let cursor = (this.W - total) / 2;
+    m.font = '800 ' + px + 'px "Baloo 2", sans-serif';
+    for (const ch of name) {
+      const w = m.measureText(ch).width;
+      this.boxes.push({ ch: ch, cx: cursor + w / 2, x0: Math.max(0, cursor - 4), x1: Math.min(this.W, cursor + w + 4) });
+      cursor += w + 6;
+    }
+  },
+  buildMask() {
+    const m = this.mctx;
+    m.clearRect(0, 0, this.W, this.H);
+    m.fillStyle = '#000'; m.textAlign = 'center'; m.textBaseline = 'middle';
+    if (this.mode === 'letters') {
+      m.font = '800 250px "Baloo 2", sans-serif';
+      m.fillText(this.char(), this.W / 2, this.H / 2 + 10);
+    } else {
+      this.layoutName();
+      m.font = '800 ' + this.namePx + 'px "Baloo 2", sans-serif';
+      for (const b of this.boxes) m.fillText(b.ch, b.cx, this.H / 2);
+    }
+  },
+  load() {
+    this.done = false;
+    this.passed = {};
+    this.ictx.clearRect(0, 0, this.W, this.H);
+    this.buildMask();
+    this.redraw();
+    const hint = document.getElementById('traceHint');
+    const next = document.getElementById('traceNext');
+    if (next) next.classList.remove('pulse');
+    if (hint) hint.textContent = this.mode === 'letters'
+      ? 'Trace the letter ' + this.char() + ' with your finger!'
+      : 'Trace your name, ' + this.kidName() + '!';
+  },
+  redraw() {
+    const c = this.ctx;
+    if (!c) return;
+    c.fillStyle = '#fffdf5';
+    c.fillRect(0, 0, this.W, this.H);
+    c.strokeStyle = 'rgba(25,113,194,.20)'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(10, this.H * 0.22); c.lineTo(this.W - 10, this.H * 0.22); c.stroke();
+    c.beginPath(); c.moveTo(10, this.H * 0.78); c.lineTo(this.W - 10, this.H * 0.78); c.stroke();
+    c.strokeStyle = 'rgba(230,73,128,.35)'; c.setLineDash([7, 7]);
+    c.beginPath(); c.moveTo(10, this.H / 2); c.lineTo(this.W - 10, this.H / 2); c.stroke();
+    c.setLineDash([]);
+    c.globalAlpha = 0.15;
+    c.drawImage(this.mask, 0, 0);
+    c.globalAlpha = 1;
+    c.fillStyle = '#2f9e44'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    if (this.mode === 'letters') {
+      if (this.done) { c.font = '800 250px "Baloo 2", sans-serif'; c.fillText(this.char(), this.W / 2, this.H / 2 + 10); }
+    } else {
+      c.font = '800 ' + this.namePx + 'px "Baloo 2", sans-serif';
+      this.boxes.forEach((b, i) => { if (this.passed[i]) c.fillText(b.ch, b.cx, this.H / 2); });
+    }
+    c.drawImage(this.ink, 0, 0);
+  },
+  coverage(x0, x1) {
+    const md = this.mctx.getImageData(0, 0, this.W, this.H).data;
+    const id = this.ictx.getImageData(0, 0, this.W, this.H).data;
+    let tot = 0, hit = 0;
+    for (let y = 0; y < this.H; y += 3) {
+      for (let x = Math.floor(x0); x < x1; x += 3) {
+        const i = (y * this.W + x) * 4 + 3;
+        if (md[i] > 100) { tot++; if (id[i] > 100) hit++; }
+      }
+    }
+    return tot ? hit / tot : 0;
+  },
+  check() {
+    if (this.mode === 'letters') {
+      if (!this.done && this.coverage(0, this.W) >= 0.5) this.completeLetter();
+    } else {
+      let changed = false;
+      this.boxes.forEach((b, i) => {
+        if (!this.passed[i] && this.coverage(b.x0, b.x1) >= 0.42) { this.passed[i] = true; changed = true; }
+      });
+      if (changed) { this.redraw(); this.pop(660); }
+      if (!this.done && this.boxes.length && this.boxes.every((_, i) => this.passed[i])) this.completeName();
+    }
+  },
+  praise() {
+    const texts = ['Great job!', 'Way to go!', 'Awesome tracing!', 'You did it!', 'Super!'];
+    const pi = Math.floor(Math.random() * texts.length);
+    playSound('praise_' + pi, texts[pi], 1);
+  },
+  completeLetter() {
+    this.done = true;
+    const map = this.lower ? this.store.lower : this.store.letters;
+    map[this.letters()[this.idx]] = 1;
+    this.save();
+    this.redraw();
+    if (typeof confettiBurst === 'function') confettiBurst();
+    this.praise();
+    document.getElementById('traceHint').textContent = '⭐ Great job! That\'s the letter ' + this.char() + '!';
+    const next = document.getElementById('traceNext');
+    if (next) next.classList.add('pulse');
+    this.renderPicker();
+  },
+  completeName() {
+    this.done = true;
+    this.store.name = (this.store.name || 0) + 1;
+    this.save();
+    this.redraw();
+    if (typeof confettiBurst === 'function') confettiBurst();
+    playSound('trace_name_done', 'Great job! You traced your name, ' + this.kidName() + '!', 1);
+    document.getElementById('traceHint').textContent = '⭐ You traced your name, ' + this.kidName() + '!';
+  },
+  clear() {
+    this.ictx.clearRect(0, 0, this.W, this.H);
+    this.passed = {};
+    this.done = false;
+    const next = document.getElementById('traceNext');
+    if (next) next.classList.remove('pulse');
+    this.redraw();
+    document.getElementById('traceHint').textContent = this.mode === 'letters'
+      ? 'Trace the letter ' + this.char() + ' with your finger!'
+      : 'Trace your name, ' + this.kidName() + '!';
+  },
+  nav(d) {
+    if (this.mode !== 'letters') return;
+    this.idx = (this.idx + d + 26) % 26;
+    this.renderPicker();
+    this.load();
+  },
+  toggleCase() {
+    this.lower = !this.lower;
+    document.getElementById('traceCase').textContent = this.lower ? 'ABC' : 'abc';
+    this.renderPicker();
+    this.load();
+  },
+  hear() {
+    if (this.mode === 'name') { playSound('trace_name_hear', this.kidName(), 0.9); return; }
+    const L = this.letters()[this.idx];
+    const item = (typeof LETTERS !== 'undefined') ? LETTERS.find(x => x.l === L) : null;
+    const w = item ? item.w : '';
+    const disp = this.lower ? L.toLowerCase() : L;
+    let phrase;
+    if (L === 'X') phrase = this.lower ? 'lowercase x. You can hear the x sound in box.' : 'X. You can hear the x sound in box.';
+    else phrase = this.lower ? ('lowercase ' + disp + '. ' + disp + ' is for ' + w + '.') : (L + '. ' + L + ' is for ' + w + '.');
+    playSound((this.lower ? 'lower_' : 'letter_') + L, phrase);
+  },
+  pop(freq) {
+    try {
+      this.ac = this.ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = this.ac.createOscillator(), g = this.ac.createGain();
+      o.type = 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.05, this.ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, this.ac.currentTime + 0.1);
+      o.connect(g); g.connect(this.ac.destination);
+      o.start(); o.stop(this.ac.currentTime + 0.1);
+    } catch (e) {}
+  }
+};
+
 /* --- playground art (illustrated pieces, characters, scene) --- */
 
 /* --- Rewards: stars, stickers, playground pieces (localStorage) --- */
@@ -2260,6 +2539,7 @@ function show(id) {
     if (id === "snake") Snake.init();
     else Snake.stop();
   }
+  if (id === "write" && typeof Trace !== "undefined") Trace.hubName();
 }
 
 // Build letter cards (upper/lowercase toggle)
