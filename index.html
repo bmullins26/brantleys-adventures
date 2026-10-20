@@ -363,7 +363,7 @@
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
   <div style="text-align:center"><button class="grownups-link" onclick="show('grownups')">👤 Grown-ups</button></div>
-  <div class="ver">v2.9</div>
+  <div class="ver">v3.0</div>
 </div>
 
 <!-- REWARDS -->
@@ -1593,7 +1593,7 @@ const Trace = {
     };
     const seg = (a, b) => {
       for (const c of [this.ctx, this.ictx]) {
-        c.strokeStyle = '#1971c2'; c.lineWidth = 25; c.lineCap = 'round'; c.lineJoin = 'round';
+        c.strokeStyle = '#1971c2'; c.lineWidth = this.brushW(); c.lineCap = 'round'; c.lineJoin = 'round';
         c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke();
       }
     };
@@ -1616,6 +1616,9 @@ const Trace = {
     document.getElementById('traceNext').style.display = lettersMode ? '' : 'none';
     if (lettersMode) this.renderPicker();
     this.load();
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load('800 100px "Baloo 2"').then(() => { this.buildMask(); this.redraw(); });
+    }
   },
   renderPicker() {
     const p = document.getElementById('tracePicker');
@@ -1654,8 +1657,20 @@ const Trace = {
   metrics() {
     const px = this.mode === 'letters' ? 250 : this.namePx;
     const baseline = Math.round(this.H * 0.70);
-    const cap = px * 0.72;
-    return { px: px, baseline: baseline, top: Math.round(baseline - cap), mid: Math.round(baseline - cap * 0.52) };
+    let capAsc = px * 0.72, xAsc = px * 0.52;
+    try {
+      const m = this.mctx;
+      m.font = '800 ' + px + 'px "Baloo 2", sans-serif';
+      const cap = m.measureText('H').actualBoundingBoxAscent;
+      const xh = m.measureText('x').actualBoundingBoxAscent;
+      if (cap) capAsc = cap;
+      if (xh) xAsc = xh;
+    } catch (e) {}
+    return { px: px, baseline: baseline, top: Math.round(baseline - capAsc), mid: Math.round(baseline - xAsc) };
+  },
+  brushW() {
+    const px = this.mode === 'letters' ? 250 : this.namePx;
+    return Math.max(10, Math.min(22, Math.round(px * 0.10)));
   },
   buildMask() {
     const m = this.mctx;
@@ -1723,11 +1738,11 @@ const Trace = {
   },
   check() {
     if (this.mode === 'letters') {
-      if (!this.done && this.coverage(0, this.W) >= 0.5) this.completeLetter();
+      if (!this.done && this.coverage(0, this.W) >= 0.45) this.completeLetter();
     } else {
       let changed = false;
       this.boxes.forEach((b, i) => {
-        if (!this.passed[i] && this.coverage(b.x0, b.x1) >= 0.42) { this.passed[i] = true; changed = true; }
+        if (!this.passed[i] && this.coverage(b.x0, b.x1) >= 0.38) { this.passed[i] = true; changed = true; }
       });
       if (changed) { this.redraw(); this.pop(660); }
       if (!this.done && this.boxes.length && this.boxes.every((_, i) => this.passed[i])) this.completeName();
