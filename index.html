@@ -363,7 +363,7 @@
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
   <div style="text-align:center"><button class="grownups-link" onclick="show('grownups')">👤 Grown-ups</button></div>
-  <div class="ver">v3.0</div>
+  <div class="ver">v3.1</div>
 </div>
 
 <!-- REWARDS -->
@@ -1643,10 +1643,10 @@ const Trace = {
       return total - 6;
     };
     let total = measure();
-    while (total > this.W - 28 && px > 38) { px -= 6; total = measure(); }
+    while (total > this.W - 32 && px > 38) { px -= 6; total = measure(); }
     this.namePx = px;
     this.boxes = [];
-    let cursor = (this.W - total) / 2;
+    let cursor = 16;
     m.font = '800 ' + px + 'px "Baloo 2", sans-serif';
     for (const ch of name) {
       const w = m.measureText(ch).width;
@@ -1705,16 +1705,50 @@ const Trace = {
     c.fillStyle = '#fffdf5';
     c.fillRect(0, 0, this.W, this.H);
     const mt = this.metrics();
-    c.strokeStyle = 'rgba(25,113,194,.20)'; c.lineWidth = 2;
-    c.beginPath(); c.moveTo(10, mt.top); c.lineTo(this.W - 10, mt.top); c.stroke();
-    c.strokeStyle = 'rgba(25,113,194,.45)';
-    c.beginPath(); c.moveTo(10, mt.baseline); c.lineTo(this.W - 10, mt.baseline); c.stroke();
-    c.strokeStyle = 'rgba(230,73,128,.35)'; c.setLineDash([7, 7]);
-    c.beginPath(); c.moveTo(10, mt.mid); c.lineTo(this.W - 10, mt.mid); c.stroke();
+    // --- solid model row (what the worksheet shows first) ---
+    c.fillStyle = '#333'; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    if (this.mode === 'name') {
+      c.font = '700 15px "Baloo 2", sans-serif';
+      c.fillStyle = '#8a8a8a';
+      c.fillText('My name is...', 16, 26);
+      c.fillStyle = '#333';
+      let mp = 48;
+      c.font = '800 ' + mp + 'px "Baloo 2", sans-serif';
+      while (c.measureText(this.kidName()).width > this.W - 32 && mp > 20) { mp -= 3; c.font = '800 ' + mp + 'px "Baloo 2", sans-serif'; }
+      c.fillText(this.kidName(), 16, 78);
+    } else {
+      const L = this.letters()[this.idx];
+      const item = (typeof LETTERS !== 'undefined') ? LETTERS.find(x => x.l === L) : null;
+      c.font = '800 50px "Baloo 2", sans-serif';
+      c.fillText(this.char(), 16, 76);
+      if (item) {
+        c.font = '700 22px "Baloo 2", sans-serif';
+        c.fillText(item.e + ' ' + item.w, 86, 72);
+      }
+    }
+    // --- worksheet lines: bold top + baseline, thin dashed midline ---
+    c.strokeStyle = '#3a3a3a'; c.lineWidth = 2.5;
+    c.beginPath(); c.moveTo(8, mt.top); c.lineTo(this.W - 8, mt.top); c.stroke();
+    c.lineWidth = 3;
+    c.beginPath(); c.moveTo(8, mt.baseline); c.lineTo(this.W - 8, mt.baseline); c.stroke();
+    c.strokeStyle = '#6b6b6b'; c.lineWidth = 1.5; c.setLineDash([8, 6]);
+    c.beginPath(); c.moveTo(8, mt.mid); c.lineTo(this.W - 8, mt.mid); c.stroke();
     c.setLineDash([]);
-    c.globalAlpha = 0.15;
-    c.drawImage(this.mask, 0, 0);
-    c.globalAlpha = 1;
+    // --- dotted guide letters ---
+    c.font = '800 ' + mt.px + 'px "Baloo 2", sans-serif';
+    c.textBaseline = 'alphabetic';
+    const guide = (ch, x, align) => {
+      c.textAlign = align;
+      c.fillStyle = 'rgba(0,0,0,0.05)';
+      c.fillText(ch, x, mt.baseline);
+      c.strokeStyle = 'rgba(0,0,0,0.55)';
+      c.lineWidth = 3; c.lineCap = 'round'; c.setLineDash([0.1, 7]);
+      c.strokeText(ch, x, mt.baseline);
+      c.setLineDash([]);
+    };
+    if (this.mode === 'letters') guide(this.char(), this.W / 2, 'center');
+    else for (const b of this.boxes) guide(b.ch, b.cx, 'center');
+    // --- completed letters stamp solid green ---
     c.fillStyle = '#2f9e44'; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
     c.font = '800 ' + mt.px + 'px "Baloo 2", sans-serif';
     if (this.mode === 'letters') {
