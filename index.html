@@ -176,13 +176,14 @@
     user-select: none; -webkit-user-select: none; z-index: 10; }
   .pg-piece img.pg-art { width: 100%; display: block; pointer-events: none; }
   .pg-piece.dragging { cursor: grabbing; filter: drop-shadow(0 8px 10px rgba(0,0,0,.35)); }
-  .pg-piece.placed { animation: pg-settle .18s ease-out; }
+  .pg-piece.placed, .pg-kid.placed { animation: pg-settle .18s ease-out; }
   @keyframes pg-settle { 0% { transform: scale(1.07); } 100% { transform: scale(1); } }
   @keyframes pg-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
-  .pg-kid { position: absolute; bottom: 3%; width: 17%; z-index: 20; text-align: center;
-    cursor: pointer; touch-action: manipulation; }
-  .pg-kid img { width: 100%; display: block; pointer-events: none;
+  .pg-kid { position: absolute; height: 37%; z-index: 20; text-align: center;
+    cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .pg-kid img { height: 100%; width: auto; display: block; pointer-events: none;
     animation: pg-bob 3.2s ease-in-out infinite; }
+  .pg-kid.dragging { cursor: grabbing; filter: drop-shadow(0 8px 10px rgba(0,0,0,.35)); }
   .pg-kid.jump img { animation: pg-jump .65s ease; }
   @keyframes pg-jump { 0% { transform: translateY(0); } 40% { transform: translateY(-30px) rotate(-5deg); }
     70% { transform: translateY(0); } 85% { transform: translateY(-9px); } 100% { transform: translateY(0); } }
@@ -236,7 +237,7 @@
     <button class="home-card tint-purple wide" onclick="show('games')"><span class="hc-icon">🎮</span><span class="hc-title">Games</span><span class="hc-sub">Tic tac toe &amp; more</span></button>
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
-  <div class="ver">v30</div>
+  <div class="ver">v31</div>
 </div>
 
 <!-- REWARDS -->
@@ -554,6 +555,7 @@ const Rewards = {
       this.data = { stars: 0, stickers: [], pieces: { quizTime: [], matchPairs: [], numberQuiz: [] }, lastPieceDate: {}, layout: {} };
     }
     if (!this.data.layout) this.data.layout = {};
+    if (!this.data.kidPos) this.data.kidPos = {};
   },
   save() { try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) {} },
   today() { return new Date().toISOString().slice(0, 10); },
@@ -669,23 +671,66 @@ Rewards.load();
 
 /* --- living playground: kids, daily visitor, sparkles --- */
 const PG_KIDS = [
-  { img: 'brantley', name: 'Brantley', x: 7 },
-  { img: 'mia', name: 'Mia', x: 42 },
-  { img: 'jay', name: 'Jay', x: 75 }
+  { img: 'brantley', name: 'Brantley', x: 7, y: 58 },
+  { img: 'mia', name: 'Mia', x: 42, y: 58 },
+  { img: 'jay', name: 'Jay', x: 75, y: 58 }
 ];
 function renderPgKids(scene) {
   PG_KIDS.forEach(k => {
+    const pos = (Rewards.data.kidPos && Rewards.data.kidPos[k.img]) || { x: k.x, y: k.y };
     const d = document.createElement('div');
     d.className = 'pg-kid';
-    d.style.left = k.x + '%';
+    d.style.left = pos.x + '%';
+    d.style.top = pos.y + '%';
+    d.dataset.x = pos.x;
+    d.dataset.y = pos.y;
     d.innerHTML = '<img src="' + PG_ART[k.img] + '" alt="' + k.name + '">';
-    d.onclick = () => {
-      d.classList.remove('jump');
-      void d.offsetWidth;
-      d.classList.add('jump');
-      pgSparkles(scene, d.offsetLeft + d.offsetWidth / 2, d.offsetTop, k.name + '!');
-    };
     scene.appendChild(d);
+    makeKidDraggable(d, k, scene);
+  });
+}
+function makeKidDraggable(el, kid, scene) {
+  el.addEventListener('pointerdown', ev => {
+    ev.preventDefault();
+    const sr = scene.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    const dx = ev.clientX - er.left, dy = ev.clientY - er.top;
+    const startX = ev.clientX, startY = ev.clientY;
+    let moved = false;
+    try { el.setPointerCapture(ev.pointerId); } catch (e) {}
+    el.classList.add('dragging');
+    function move(e2) {
+      if (Math.abs(e2.clientX - startX) + Math.abs(e2.clientY - startY) > 10) moved = true;
+      let x = (e2.clientX - sr.left - dx) / sr.width * 100;
+      let y = (e2.clientY - sr.top - dy) / sr.height * 100;
+      x = Math.max(0, Math.min(84, x));
+      y = Math.max(0, Math.min(61, y));
+      el.style.left = x + '%';
+      el.style.top = y + '%';
+      el.dataset.x = x;
+      el.dataset.y = y;
+    }
+    function up() {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+      el.classList.remove('dragging');
+      if (moved) {
+        Rewards.data.kidPos[kid.img] = { x: parseFloat(el.dataset.x), y: parseFloat(el.dataset.y) };
+        Rewards.save();
+        el.classList.remove('placed');
+        void el.offsetWidth;
+        el.classList.add('placed');
+      } else {
+        el.classList.remove('jump');
+        void el.offsetWidth;
+        el.classList.add('jump');
+        pgSparkles(scene, el.offsetLeft + el.offsetWidth / 2, el.offsetTop, kid.name + '!');
+      }
+    }
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
   });
 }
 const PG_VISITORS = [
