@@ -169,25 +169,55 @@
 
   /* --- rewards --- */
   .pg-scene { border-radius: 26px; overflow: hidden; margin: 12px 0; position: relative;
-    height: 340px; background: linear-gradient(#bfe9ff 0 24%, #9ede7a 24% 100%); }
-  .pg-piece { position: absolute; width: 23%; text-align: center; font-weight: 800;
-    color: #3a2b00; font-size: .78rem; cursor: grab; touch-action: none;
-    user-select: none; -webkit-user-select: none;
-    background: rgba(255,255,255,.88); border-radius: 16px; padding: 6px 2px 4px; }
-  .pg-piece .pg-e { font-size: 2.3rem; display: block; line-height: 1.15; }
-  .pg-piece.dragging { transform: scale(1.12); box-shadow: 0 8px 18px rgba(0,0,0,.25); cursor: grabbing; }
-  .pg-hint { position: absolute; top: 45%; left: 0; right: 0; text-align: center;
-    font-weight: 800; color: #2f5d1f; font-size: 1.05rem; padding: 0 20px; }
+    height: 380px; }
+  .pg-scene .pg-bg { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; pointer-events: none; }
+  .pg-piece { position: absolute; width: 24%; cursor: grab; touch-action: none;
+    user-select: none; -webkit-user-select: none; z-index: 10; }
+  .pg-piece img.pg-art { width: 100%; display: block; pointer-events: none; }
+  .pg-piece .pg-name { display: inline-block; font-weight: 800; color: #3a2b00;
+    font-size: .72rem; background: rgba(255,255,255,.88); border-radius: 10px;
+    padding: 1px 8px; margin-top: -2px; }
+  .pg-piece { text-align: center; }
+  .pg-piece.dragging { cursor: grabbing; filter: drop-shadow(0 8px 10px rgba(0,0,0,.35)); }
+  .pg-piece.tapplay { animation: pg-bounce .7s ease; }
+  .pg-idle-sway { animation: pg-sway 3.4s ease-in-out infinite; transform-origin: top center; }
+  .pg-idle-bob { animation: pg-bob 2.8s ease-in-out infinite; }
+  .pg-idle-tilt { animation: pg-tilt 3.8s ease-in-out infinite; transform-origin: bottom center; }
+  @keyframes pg-sway { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+  @keyframes pg-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+  @keyframes pg-tilt { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+  @keyframes pg-bounce { 0% { transform: scale(1); } 30% { transform: scale(1.16) rotate(-5deg); }
+    60% { transform: scale(.94) rotate(3deg); } 100% { transform: scale(1); } }
+  .pg-kid { position: absolute; bottom: 3%; width: 17%; z-index: 20; text-align: center;
+    cursor: pointer; touch-action: manipulation; }
+  .pg-kid img { width: 100%; display: block; pointer-events: none;
+    animation: pg-bob 3.2s ease-in-out infinite; }
+  .pg-kid .pg-name { display: inline-block; font-weight: 800; color: #3a2b00;
+    font-size: .72rem; background: rgba(255,255,255,.88); border-radius: 10px; padding: 1px 8px; }
+  .pg-kid.jump img { animation: pg-jump .65s ease; }
+  @keyframes pg-jump { 0% { transform: translateY(0); } 40% { transform: translateY(-30px) rotate(-5deg); }
+    70% { transform: translateY(0); } 85% { transform: translateY(-9px); } 100% { transform: translateY(0); } }
+  .pg-visitor { position: absolute; top: 5%; right: 6%; width: 15%; z-index: 15;
+    cursor: pointer; animation: pg-float 4.5s ease-in-out infinite; }
+  @keyframes pg-float { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-16px,12px); } }
+  .pg-spark { position: absolute; font-size: 1.2rem; z-index: 60; pointer-events: none;
+    animation: pg-spark .9s ease-out forwards; }
+  @keyframes pg-spark { to { transform: translateY(-48px) scale(.5); opacity: 0; } }
+  .pg-hint { position: absolute; top: 42%; left: 0; right: 0; text-align: center;
+    font-weight: 800; color: #1e4d12; font-size: 1.05rem; padding: 0 24px;
+    text-shadow: 0 1px 0 rgba(255,255,255,.7); }
   .pg-locked-title { font-weight: 800; color: #3a2b00; margin: 14px 0 8px; font-size: 1.05rem; }
   .pg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .pg-tile img.pg-art { width: 70%; display: block; margin: 0 auto; }
+  .pg-tile.locked img.pg-art { filter: grayscale(1); opacity: .45; }
   .pg-tile { background: rgba(255,255,255,.92); border-radius: 18px; padding: 10px 4px 8px;
     text-align: center; font-weight: 800; color: #3a2b00; font-size: .82rem; position: relative; }
   .pg-tile .pg-e { font-size: 2.4rem; display: block; line-height: 1.2; }
   .pg-tile.locked { background: rgba(255,255,255,.45); border: 2px dashed rgba(0,0,0,.25); }
   .pg-tile.locked .pg-e { filter: grayscale(1); opacity: .45; }
   .pg-tile .pg-lock { position: absolute; top: 4px; right: 8px; font-size: 1rem; }
-  .pg-kids { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
-    font-size: 1.9rem; pointer-events: none; }
+
   .sticker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0; }
   .sticker-tile { background: #fff; border-radius: 18px; aspect-ratio: 1/1; display: flex;
     align-items: center; justify-content: center; font-size: 2.2rem; position: relative;
@@ -218,7 +248,7 @@
     <button class="home-card tint-purple wide" onclick="show('games')"><span class="hc-icon">🎮</span><span class="hc-title">Games</span><span class="hc-sub">Tic tac toe &amp; more</span></button>
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
-  <div class="ver">v28</div>
+  <div class="ver">v29</div>
 </div>
 
 <!-- REWARDS -->
@@ -237,9 +267,7 @@
   <button class="back-btn" onclick="show('rewards')">⬅ Rewards</button>
   <h1>🏗️ My Playground</h1>
   <p class="reward-count" id="pgCount2">0 of 12 pieces</p>
-  <div class="pg-scene" id="pgScene">
-    <div class="pg-kids">👦👧🧒</div>
-  </div>
+  <div class="pg-scene" id="pgScene"></div>
   <p class="subtitle">Drag your pieces to build your playground!</p>
   <div class="pg-locked-title">Still to earn 🔒</div>
   <div class="pg-grid" id="pgLocked"></div>
@@ -494,6 +522,26 @@ const TicTacToe = {
   }
 };
 
+/* --- playground art (illustrated pieces, characters, scene) --- */
+const PG_ART = {
+  slide: 'art/slide.webp',
+  swings: 'art/swings.webp',
+  seesaw: 'art/seesaw.webp',
+  ferris: 'art/ferris.webp',
+  sandbox: 'art/sandbox.webp',
+  tunnel: 'art/tunnel.webp',
+  climbing: 'art/climbing.webp',
+  monkeybars: 'art/monkeybars.webp',
+  treehouse: 'art/treehouse.webp',
+  fountain: 'art/fountain.webp',
+  flowers: 'art/flowers.webp',
+  picnic: 'art/picnic.webp',
+  brantley: 'art/brantley.webp',
+  mia: 'art/mia.webp',
+  jay: 'art/jay.webp',
+  scene: 'art/scene.jpg'
+};
+
 /* --- Rewards: stars, stickers, playground pieces (localStorage) --- */
 const Rewards = {
   KEY: 'ba_rewards_v1',
@@ -511,16 +559,16 @@ const Rewards = {
   ],
   PIECES: {
     quizTime: [
-      { e: '\uD83D\uDEDD', n: 'Slide' }, { e: '\uD83C\uDFA0', n: 'Swings' },
-      { e: '\u2696\uFE0F', n: 'Seesaw' }, { e: '\uD83C\uDFA1', n: 'Ferris Wheel' }
+      { e: '\uD83D\uDEDD', n: 'Slide', img: 'slide', anim: 'bob' }, { e: '\uD83C\uDFA0', n: 'Swings', img: 'swings', anim: 'sway' },
+      { e: '\u2696\uFE0F', n: 'Seesaw', img: 'seesaw', anim: 'tilt' }, { e: '\uD83C\uDFA1', n: 'Ferris Wheel', img: 'ferris', anim: 'bob' }
     ],
     matchPairs: [
-      { e: '\uD83C\uDFD6\uFE0F', n: 'Sandbox' }, { e: '\uD83D\uDD73\uFE0F', n: 'Tunnel' },
-      { e: '\uD83E\uDDD7', n: 'Climbing Wall' }, { e: '\uD83D\uDC35', n: 'Monkey Bars' }
+      { e: '\uD83C\uDFD6\uFE0F', n: 'Sandbox', img: 'sandbox', anim: 'none' }, { e: '\uD83D\uDD73\uFE0F', n: 'Tunnel', img: 'tunnel', anim: 'none' },
+      { e: '\uD83E\uDDD7', n: 'Climbing Wall', img: 'climbing', anim: 'none' }, { e: '\uD83D\uDC35', n: 'Monkey Bars', img: 'monkeybars', anim: 'none' }
     ],
     numberQuiz: [
-      { e: '\uD83C\uDF33', n: 'Treehouse' }, { e: '\u26F2', n: 'Fountain' },
-      { e: '\uD83C\uDF38', n: 'Flower Garden' }, { e: '\uD83E\uDDFA', n: 'Picnic Table' }
+      { e: '\uD83C\uDF33', n: 'Treehouse', img: 'treehouse', anim: 'sway' }, { e: '\u26F2', n: 'Fountain', img: 'fountain', anim: 'bob' },
+      { e: '\uD83C\uDF38', n: 'Flower Garden', img: 'flowers', anim: 'sway' }, { e: '\uD83E\uDDFA', n: 'Picnic Table', img: 'picnic', anim: 'none' }
     ]
   },
   DEFAULT_POS: [
@@ -580,7 +628,12 @@ const Rewards = {
   renderPlayground() {
     const scene = document.getElementById('pgScene');
     if (!scene) return;
-    scene.querySelectorAll('.pg-piece, .pg-hint').forEach(e => e.remove());
+    scene.innerHTML = '';
+    const bg = document.createElement('img');
+    bg.className = 'pg-bg';
+    bg.src = PG_ART.scene;
+    bg.alt = '';
+    scene.appendChild(bg);
     const order = ['quizTime', 'matchPairs', 'numberQuiz'];
     let g = 0;
     order.forEach(qid => {
@@ -594,7 +647,7 @@ const Rewards = {
           d.style.top = pos.y + '%';
           d.dataset.x = pos.x;
           d.dataset.y = pos.y;
-          d.innerHTML = '<span class="pg-e">' + p.e + '</span>' + p.n;
+          d.innerHTML = '<img class="pg-art' + (p.anim !== 'none' ? ' pg-idle-' + p.anim : '') + '" src="' + PG_ART[p.img] + '" alt="' + p.n + '"><span class="pg-name">' + p.n + '</span>';
           scene.appendChild(d);
           makePieceDraggable(d, key);
         }
@@ -607,6 +660,8 @@ const Rewards = {
       h.textContent = 'Finish a quiz to earn your first piece!';
       scene.appendChild(h);
     }
+    renderPgKids(scene);
+    renderPgVisitor(scene);
     const lg = document.getElementById('pgLocked');
     if (lg) {
       lg.innerHTML = '';
@@ -615,7 +670,7 @@ const Rewards = {
           if (this.data.pieces[qid].indexOf(i) < 0) {
             const d = document.createElement('div');
             d.className = 'pg-tile locked';
-            d.innerHTML = '<span class="pg-e">' + p.e + '</span>' + p.n + '<span class="pg-lock">\uD83D\uDD12</span>';
+            d.innerHTML = '<img class="pg-art" src="' + PG_ART[p.img] + '" alt=""><br>' + p.n + '<span class="pg-lock">\uD83D\uDD12</span>';
             lg.appendChild(d);
           }
         });
@@ -641,6 +696,71 @@ const Rewards = {
 };
 Rewards.load();
 
+/* --- living playground: kids, daily visitor, sparkles --- */
+const PG_KIDS = [
+  { img: 'brantley', name: 'Brantley', x: 7 },
+  { img: 'mia', name: 'Mia', x: 42 },
+  { img: 'jay', name: 'Jay', x: 75 }
+];
+function renderPgKids(scene) {
+  PG_KIDS.forEach(k => {
+    const d = document.createElement('div');
+    d.className = 'pg-kid';
+    d.style.left = k.x + '%';
+    d.innerHTML = '<img src="' + PG_ART[k.img] + '" alt="' + k.name + '"><span class="pg-name">' + k.name + '</span>';
+    d.onclick = () => {
+      d.classList.remove('jump');
+      void d.offsetWidth;
+      d.classList.add('jump');
+      pgSparkles(scene, d.offsetLeft + d.offsetWidth / 2, d.offsetTop, k.name + '!');
+    };
+    scene.appendChild(d);
+  });
+}
+const PG_VISITORS = [
+  { name: 'Butterfly', svg: '<svg viewBox="0 0 60 50" xmlns="http://www.w3.org/2000/svg"><ellipse cx="21" cy="21" rx="14" ry="16" fill="#ff9ff3"/><ellipse cx="39" cy="21" rx="14" ry="16" fill="#f368e0"/><ellipse cx="30" cy="27" rx="5" ry="14" fill="#5f27cd"/><circle cx="30" cy="10" r="4.5" fill="#5f27cd"/></svg>' },
+  { name: 'Balloons', svg: '<svg viewBox="0 0 60 84" xmlns="http://www.w3.org/2000/svg"><ellipse cx="20" cy="22" rx="12" ry="15" fill="#ff6b6b"/><ellipse cx="41" cy="17" rx="12" ry="15" fill="#4dabf7"/><ellipse cx="30" cy="35" rx="12" ry="15" fill="#ffd43b"/><path d="M20 37 Q17 58 26 74 M41 32 Q43 58 34 74 M30 50 Q30 62 30 74" stroke="#7a6a53" fill="none" stroke-width="1.6"/></svg>' },
+  { name: 'Rainbow', svg: '<svg viewBox="0 0 90 52" xmlns="http://www.w3.org/2000/svg"><path d="M8 46 A37 37 0 0 1 82 46" stroke="#ff6b6b" stroke-width="8" fill="none"/><path d="M17 46 A28 28 0 0 1 73 46" stroke="#ffd43b" stroke-width="8" fill="none"/><path d="M26 46 A19 19 0 0 1 64 46" stroke="#51cf66" stroke-width="8" fill="none"/><path d="M35 46 A10 10 0 0 1 55 46" stroke="#4dabf7" stroke-width="8" fill="none"/></svg>' }
+];
+function pgVisitorToday() {
+  return PG_VISITORS[Math.floor(Date.now() / 86400000) % PG_VISITORS.length];
+}
+function renderPgVisitor(scene) {
+  const v = pgVisitorToday();
+  const d = document.createElement('div');
+  d.className = 'pg-visitor';
+  d.innerHTML = v.svg;
+  d.setAttribute('aria-label', "Today's visitor: " + v.name);
+  d.onclick = () => pgSparkles(scene, d.offsetLeft + d.offsetWidth / 2, d.offsetTop, v.name + '!');
+  scene.appendChild(d);
+}
+function pgSparkles(scene, x, y, label) {
+  const chars = ['\u2728', '\u2B50', '\u2728', '\uD83C\uDF89'];
+  for (let i = 0; i < 5; i++) {
+    const s = document.createElement('span');
+    s.className = 'pg-spark';
+    s.textContent = chars[i % chars.length];
+    s.style.left = (x - 10 + (i - 2) * 16) + 'px';
+    s.style.top = y + 'px';
+    scene.appendChild(s);
+    setTimeout(() => s.remove(), 950);
+  }
+  if (label) {
+    const t = document.createElement('span');
+    t.className = 'pg-spark';
+    t.style.fontWeight = '800';
+    t.style.color = '#3a2b00';
+    t.style.background = 'rgba(255,255,255,.9)';
+    t.style.borderRadius = '10px';
+    t.style.padding = '1px 8px';
+    t.textContent = label;
+    t.style.left = Math.max(4, x - 40) + 'px';
+    t.style.top = (y - 26) + 'px';
+    scene.appendChild(t);
+    setTimeout(() => t.remove(), 950);
+  }
+}
+
 /* --- playground piece dragging (pointer events, touch + mouse) --- */
 function makePieceDraggable(el, key) {
   el.addEventListener('pointerdown', ev => {
@@ -650,14 +770,16 @@ function makePieceDraggable(el, key) {
     const sr = scene.getBoundingClientRect();
     const er = el.getBoundingClientRect();
     const dx = ev.clientX - er.left, dy = ev.clientY - er.top;
+    const startX = ev.clientX, startY = ev.clientY;
+    let moved = false;
     try { el.setPointerCapture(ev.pointerId); } catch (e) {}
     el.classList.add('dragging');
-    el.style.zIndex = 30;
     function move(e2) {
+      if (Math.abs(e2.clientX - startX) + Math.abs(e2.clientY - startY) > 10) moved = true;
       let x = (e2.clientX - sr.left - dx) / sr.width * 100;
       let y = (e2.clientY - sr.top - dy) / sr.height * 100;
-      x = Math.max(0, Math.min(77, x));
-      y = Math.max(0, Math.min(72, y));
+      x = Math.max(0, Math.min(76, x));
+      y = Math.max(0, Math.min(70, y));
       el.style.left = x + '%';
       el.style.top = y + '%';
       el.dataset.x = x;
@@ -668,9 +790,15 @@ function makePieceDraggable(el, key) {
       el.removeEventListener('pointerup', up);
       el.removeEventListener('pointercancel', up);
       el.classList.remove('dragging');
-      el.style.zIndex = '';
-      Rewards.data.layout[key] = { x: parseFloat(el.dataset.x), y: parseFloat(el.dataset.y) };
-      Rewards.save();
+      if (moved) {
+        Rewards.data.layout[key] = { x: parseFloat(el.dataset.x), y: parseFloat(el.dataset.y) };
+        Rewards.save();
+      } else {
+        el.classList.remove('tapplay');
+        void el.offsetWidth;
+        el.classList.add('tapplay');
+        pgSparkles(scene, el.offsetLeft + el.offsetWidth / 2, el.offsetTop, '');
+      }
     }
     el.addEventListener('pointermove', move);
     el.addEventListener('pointerup', up);
@@ -688,7 +816,7 @@ function endRound(quizId, againFn, menuId) {
   const res = Rewards.finishRound(quizId);
   const got = pendingStickers.splice(0);
   let body = '';
-  if (res.piece) body += '<span class="big">' + res.piece.e + '</span>You earned the <b>' + res.piece.n + '</b>!<br>Drag it around in your playground!';
+  if (res.piece) body += '<img src="' + PG_ART[res.piece.img] + '" alt="" style="width:130px;display:block;margin:0 auto 4px">You earned the <b>' + res.piece.n + '</b>!<br>Drag it around in your playground!';
   if (got.length) body += (body ? '<br>' : '') + '<span class="big">' + got[0].e + '</span>New sticker: <b>' + got[0].n + '</b>! (' + Rewards.data.stickers.length + ' of 20)';
   if (!body) {
     body = '<span class="big">\u2B50</span>Great job! You earned 10 stars!';
