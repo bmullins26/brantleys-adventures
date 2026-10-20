@@ -231,6 +231,23 @@
   .sc-choice { padding: 14px 6px; }
   .sc-choice svg { width: 74px; height: 74px; }
   .sc-choice .sc-blob { width: 66px; height: 66px; }
+
+  /* --- adaptive stats & progress --- */
+  .quiz-choice.hint { animation: hintPulse .7s ease 2; box-shadow: 0 0 0 4px #ffd43b; }
+  @keyframes hintPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+  .mastery-badge { position: absolute; top: 4px; right: 6px; font-size: .95rem; }
+  .letter-card, .number-card { position: relative; }
+  .prog-card { background: #fff; border-radius: 20px; padding: 16px; margin: 12px 8px;
+    box-shadow: 0 4px 0 rgba(0,0,0,.06); text-align: left; }
+  .prog-title { font-weight: 800; color: #3a2b00; font-size: 1.05rem; }
+  .prog-sub { color: #6b5d3f; font-weight: 700; font-size: .9rem; margin-top: 6px; }
+  .pg-bar { background: rgba(0,0,0,.08); border-radius: 999px; height: 14px; overflow: hidden; margin: 8px 0 2px; }
+  .pg-bar-fill { background: linear-gradient(90deg, #51cf66, #94d82d); height: 100%; border-radius: 999px; }
+  .prog-tiles { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .prog-tile { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+    border-radius: 12px; font-weight: 800; background: #fff; border: 2px solid rgba(0,0,0,.12); color: #3a2b00; }
+  .prog-tile.gold { background: #ffd43b; border-color: #e8b10e; }
+  .prog-tile.new { opacity: .38; }
 </style>
 </head>
 <body>
@@ -253,7 +270,7 @@
     <button class="home-card tint-purple wide" onclick="show('games')"><span class="hc-icon">🎮</span><span class="hc-title">Games</span><span class="hc-sub">Tic tac toe &amp; more</span></button>
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
-  <div class="ver">v2.1</div>
+  <div class="ver">v2.2</div>
 </div>
 
 <!-- REWARDS -->
@@ -265,7 +282,17 @@
     <button class="home-card tint-green" onclick="show('playground')"><span class="hc-icon">🏗️</span><span class="hc-title">Playground</span><span class="hc-sub" id="pgCount">0 of 12</span></button>
     <button class="home-card tint-pink" onclick="show('stickers')"><span class="hc-icon">⭐</span><span class="hc-title">Stickers</span><span class="hc-sub" id="stCount">0 of 20</span></button>
   </div>
+  <div class="home-grid">
+    <button class="home-card tint-blue wide" onclick="show('progress')"><span class="hc-icon">📊</span><span class="hc-title">Progress</span><span class="hc-sub">For grown-ups</span></button>
+  </div>
   <p class="subtitle">Play quizzes to earn stars and prizes!</p>
+</div>
+
+<div id="progress" class="screen">
+  <button class="back-btn" onclick="show('rewards')">⬅ Rewards</button>
+  <h1>📊 Progress</h1>
+  <p class="subtitle">For grown-ups — how learning is going</p>
+  <div id="progressBody"></div>
 </div>
 
 <div id="playground" class="screen">
@@ -746,6 +773,81 @@ const Rewards = {
 };
 Rewards.load();
 
+/* --- Adaptive stats: per-item accuracy -> weighted questions, mastery, tiers --- */
+const Stats = {
+  KEY: 'ba_stats_v1',
+  data: null,
+  load() {
+    try { this.data = JSON.parse(localStorage.getItem(this.KEY)); } catch (e) { this.data = null; }
+    if (!this.data || typeof this.data !== 'object' || !this.data.items) this.data = { items: {} };
+  },
+  save() { try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) {} },
+  get(skill, id) { return this.data.items[skill + ':' + id] || null; },
+  record(skill, id, correct) {
+    const k = skill + ':' + id;
+    const s = this.data.items[k] || (this.data.items[k] = { a: 0, c: 0 });
+    s.a++;
+    if (correct) s.c++;
+    this.save();
+  },
+  isMastered(skill, id) {
+    const s = this.get(skill, id);
+    return !!s && s.a >= 4 && s.c / s.a >= 0.75;
+  },
+  weight(skill, id) {
+    const s = this.get(skill, id);
+    if (!s || s.a === 0) return 3;
+    if (this.isMastered(skill, id)) return 0.4;
+    const acc = s.c / s.a;
+    if (acc < 0.5) return 4;
+    if (acc < 0.8) return 2.2;
+    return 1.2;
+  },
+  pick(items, skill, idOf) {
+    let total = 0;
+    const ws = items.map(it => { const w = this.weight(skill, idOf(it)); total += w; return w; });
+    let r = Math.random() * total;
+    for (let i = 0; i < items.length; i++) { r -= ws[i]; if (r <= 0) return items[i]; }
+    return items[items.length - 1];
+  },
+  masteredCount(skill, ids) { return ids.filter(id => this.isMastered(skill, id)).length; }
+};
+Stats.load();
+
+/* numbers staircase: 1-5 until mastered, then 1-10, then 1-20 */
+function numberPool() {
+  const range = (a, b) => { const r = []; for (let n = a; n <= b; n++) r.push(n); return r; };
+  if (Stats.masteredCount('numbers', range(1, 10)) >= 8) return range(1, 20);
+  if (Stats.masteredCount('numbers', range(1, 5)) >= 4) return range(1, 10);
+  return range(1, 5);
+}
+
+/* --- grown-ups progress view --- */
+function renderProgress() {
+  const body = document.getElementById('progressBody');
+  if (!body) return;
+  const bar = (done, total) => '<div class="pg-bar"><div class="pg-bar-fill" style="width:' + Math.round(done / total * 100) + '%"></div></div>';
+  const skillRow = (label, skill, ids, nameOf) => {
+    const m = Stats.masteredCount(skill, ids);
+    const learning = ids.filter(id => { const s = Stats.get(skill, id); return s && s.a >= 2 && !Stats.isMastered(skill, id); });
+    return '<div class="prog-card"><div class="prog-title">' + label + ' \u2014 ' + m + ' of ' + ids.length + ' mastered</div>' + bar(m, ids.length)
+      + (learning.length ? '<div class="prog-sub">Still learning: ' + learning.map(nameOf).join(', ') + '</div>' : '') + '</div>';
+  };
+  let h = '<div class="prog-card"><div class="prog-title">\u2B50 ' + Rewards.data.stars + ' stars \u00B7 \uD83C\uDFE0 ' + Rewards.totalPieces() + ' of 12 playground pieces \u00B7 ' + Rewards.data.stickers.length + ' of 20 stickers</div></div>';
+  h += skillRow('\uD83D\uDD24 Letters', 'letters', LETTERS.map(x => x.l), id => id);
+  h += skillRow('\uD83D\uDD17 Match Pairs', 'match', LETTERS.map(x => x.l), id => id.toLowerCase());
+  h += skillRow('\uD83D\uDD22 Numbers', 'numbers', Array.from({ length: 20 }, (_, i) => i + 1), id => id);
+  h += skillRow('\uD83D\uDD37 Shapes', 'shapes', SHAPES.map(s => s.id), id => SHAPES.find(s => s.id === id).name);
+  h += skillRow('\uD83C\uDF08 Colors', 'colors', COLOR_LIST.map(c => c.id), id => COLOR_LIST.find(c => c.id === id).name);
+  h += '<div class="prog-card"><div class="prog-title">Letter mastery</div><div class="prog-tiles">' + LETTERS.map(x => {
+    const s = Stats.get('letters', x.l);
+    const cls = Stats.isMastered('letters', x.l) ? 'gold' : (s && s.a ? 'started' : 'new');
+    return '<span class="prog-tile ' + cls + '">' + x.l + '</span>';
+  }).join('') + '</div><div class="prog-sub">Gold = mastered \u00B7 White = practicing \u00B7 Faded = not started yet</div></div>';
+  body.innerHTML = h;
+}
+
+
 /* --- living playground: kids, daily visitor, sparkles --- */
 const PG_KIDS = [
   { img: 'brantley', name: 'Brantley', x: 7, y: 58 },
@@ -1132,6 +1234,9 @@ function show(id) {
     if (id === "rewards" || id === "home") Rewards.renderCounts();
     if (id === "playground") Rewards.renderPlayground();
     if (id === "stickers") Rewards.renderStickers();
+    if (id === "progress" && typeof renderProgress === "function") renderProgress();
+    if (id === "learn" && typeof renderGrid === "function") renderGrid();
+    if (id === "learnNumbers" && typeof renderNumbers === "function") renderNumbers();
   }
 }
 
@@ -1144,7 +1249,7 @@ function renderGrid() {
     const b = document.createElement("button");
     b.className = "letter-card";
     const disp = lowerMode ? item.l.toLowerCase() : item.l;
-    b.innerHTML = `<span class="letter">${disp}</span><span class="emoji">${item.e}</span><span class="word">${item.w}</span>`;
+    b.innerHTML = `<span class="letter">${disp}</span><span class="emoji">${item.e}</span><span class="word">${item.w}</span>` + (Stats.isMastered("letters", item.l) ? '<span class="mastery-badge">⭐</span>' : "");
     b.onclick = () => {
       const key = (lowerMode ? "lower_" : "letter_") + item.l;
       const phrase = lowerMode
@@ -1171,6 +1276,7 @@ function setCase(lower) {
 let quizTarget = null, stars = 0, quizMode = 'sound';
 
 let roundQ = 0;
+let quizScored = false, quizMisses = 0, quizHintKey = '', quizHintText = '';
 function startQuiz(mode) {
   quizMode = mode || 'sound';
   roundQ = 0; pendingStickers = [];
@@ -1187,7 +1293,12 @@ function quizRoundNext() {
 }
 
 function nextQuestion(sayIt) {
-  quizTarget = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+  quizTarget = Stats.pick(LETTERS, quizMode === 'match' ? 'match' : 'letters', it => it.l);
+  quizScored = false; quizMisses = 0;
+  quizHintKey = (quizMode === 'match' ? 'match_' : 'quiz_') + quizTarget.l;
+  quizHintText = quizMode === 'match'
+    ? 'Find the lowercase match for ' + quizTarget.l + '!'
+    : (quizTarget.l === 'X' ? 'Which letter do you hear at the end of ' + quizTarget.w + '?' : 'Which letter starts the word ' + quizTarget.w + '?');
   const others = LETTERS.filter(x => x !== quizTarget)
     .sort(() => Math.random() - 0.5).slice(0, 3);
   const box = document.getElementById("quizChoices");
@@ -1233,6 +1344,7 @@ function answer(btn, picked) {
   const correct = quizMode === 'match'
     ? picked === quizTarget.l.toLowerCase()
     : picked === quizTarget;
+  if (!quizScored) { quizScored = true; Stats.record(quizMode === 'match' ? 'match' : 'letters', quizTarget.l, correct); }
   if (correct) {
     btn.classList.add("correct");
     stars++;
@@ -1245,7 +1357,14 @@ function answer(btn, picked) {
     { const _t = navToken; setTimeout(() => { if (_t !== navToken) return; quizRoundNext(); }, 1600); }
   } else {
     btn.classList.add("wrong");
-    playSound("tryagain", "Try again!", 0.9);
+    quizMisses++;
+    if (quizMisses >= 2) {
+      const want = quizMode === 'match' ? quizTarget.l.toLowerCase() : quizTarget.l;
+      [...document.getElementById("quizChoices").children].forEach(b => { if (b.textContent === want) b.classList.add("hint"); });
+      setTimeout(() => playSound(quizHintKey, quizHintText, 0.8), 450);
+    } else {
+      playSound("tryagain", "Try again!", 0.9);
+    }
     setTimeout(() => btn.classList.remove("wrong"), 600);
   }
 }
@@ -1780,12 +1899,12 @@ function stopNumberAudio(){try{if(numAudio)numAudio.pause();}catch(e){}numAudio=
 function numFallbackSpeak(n){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(numWords[n]);u.rate=.85;u.pitch=1.1;speechSynthesis.speak(u);}catch(e){}}
 function speakNumber(n){stopNumberAudio();try{if(NUMBER_AUDIO[n]){const a=new Audio(numberClip(n));numAudio=a;a.play().catch(()=>numFallbackSpeak(n));return;}}catch(e){}numFallbackSpeak(n);}
 const numberGrid=document.getElementById('numberGrid');
-let numTarget=1,numScore=0,numRoundQ=0;
-function renderNumbers(){numberGrid.innerHTML='';for(let n=1;n<=20;n++){const b=document.createElement('button');b.className='number-card';b.innerHTML='<span class="num">'+n+'</span><span class="icons">'+((icons[n-1]+' ').repeat(n))+'</span>';b.setAttribute('aria-label','Number '+n);b.onclick=(()=>{const k=n;return()=>speakNumber(k);})();numberGrid.appendChild(b);}}
+let numTarget=1,numScore=0,numRoundQ=0,numLock=false,numScored=false,numMisses=0;
+function renderNumbers(){numberGrid.innerHTML='';for(let n=1;n<=20;n++){const b=document.createElement('button');b.className='number-card';b.innerHTML='<span class="num">'+n+'</span><span class="icons">'+((icons[n-1]+' ').repeat(n))+'</span>' + (Stats.isMastered('numbers', n) ? '<span class="mastery-badge">⭐</span>' : '');b.setAttribute('aria-label','Number '+n);b.onclick=(()=>{const k=n;return()=>speakNumber(k);})();numberGrid.appendChild(b);}}
 function startNumberQuiz(){numScore=0;numRoundQ=0;pendingStickers=[];document.getElementById('numberStars').textContent='\u2B50 0';show('numberQuiz');nextNumberQuestion();}
-function nextNumberQuestion(){numTarget=1+Math.floor(Math.random()*20);const choices=[numTarget];while(choices.length<4){let n=1+Math.floor(Math.random()*20);if(!choices.includes(n))choices.push(n);}choices.sort(()=>Math.random()-.5);const box=document.getElementById('numberQuizChoices');box.innerHTML='';document.getElementById('numberMessage').textContent='';choices.forEach(n=>{const b=document.createElement('button');b.className='quiz-choice';b.textContent=n;b.onclick=(()=>{const k=n;return()=>checkNumberAnswer(k);})();box.appendChild(b);});setTimeout(()=>speakNumber(numTarget),180);}
+function nextNumberQuestion(){numLock=false;numScored=false;numMisses=0;const pool=numberPool();numTarget=Stats.pick(pool,'numbers',n=>n);const rest=pool.filter(n=>n!==numTarget).sort(()=>Math.random()-.5);const choices=[numTarget,...rest.slice(0,3)].sort(()=>Math.random()-.5);const box=document.getElementById('numberQuizChoices');box.innerHTML='';document.getElementById('numberMessage').textContent='';choices.forEach(n=>{const b=document.createElement('button');b.className='quiz-choice';b.textContent=n;b.onclick=(()=>{const k=n;return()=>checkNumberAnswer(k);})();box.appendChild(b);});setTimeout(()=>speakNumber(numTarget),180);}
 function askNumberAgain(){speakNumber(numTarget);}
-function checkNumberAnswer(n){if(n===numTarget){numScore++;rewardStar();numRoundQ++;document.getElementById('numberStars').textContent='\u2B50 '+numScore;document.getElementById('numberMessage').textContent='\uD83C\uDF89 That\'s right!';setTimeout(()=>{if(numRoundQ>=10){endRound('numberQuiz',startNumberQuiz,'numbers');}else{nextNumberQuestion();}},850);}else{document.getElementById('numberMessage').textContent='Try again! Listen one more time.';setTimeout(askNumberAgain,200);}}
+function checkNumberAnswer(n){if(numLock)return;if(n===numTarget){numLock=true;if(!numScored){numScored=true;Stats.record('numbers',numTarget,true);}numScore++;rewardStar();numRoundQ++;const q=numRoundQ;document.getElementById('numberStars').textContent='\u2B50 '+numScore;document.getElementById('numberMessage').textContent='\uD83C\uDF89 That\'s right!';setTimeout(()=>{if(q>=10){endRound('numberQuiz',startNumberQuiz,'numbers');}else{nextNumberQuestion();}},850);}else{if(!numScored){numScored=true;Stats.record('numbers',numTarget,false);}numMisses++;document.getElementById('numberMessage').textContent='Try again! Listen one more time.';if(numMisses>=2){[...document.getElementById('numberQuizChoices').children].forEach(b=>{if(b.textContent===String(numTarget))b.classList.add('hint');});}setTimeout(askNumberAgain,200);}}
 
 /* --- shapes & colors audio (Aria) --- */
 
@@ -1867,7 +1986,7 @@ function scPraise(ok) {
     playSound('tryagain', 'Try again!', 0.9);
   }
 }
-let shapeTarget = null, shapeRoundQ = 0, shapeLock = false;
+let shapeTarget = null, shapeRoundQ = 0, shapeLock = false, shapeScored = false, shapeMisses = 0;
 function startShapeQuiz() {
   shapeRoundQ = 0; shapeLock = false; pendingStickers = [];
   document.getElementById('shapeStars').textContent = '\u2B50 0';
@@ -1876,7 +1995,8 @@ function startShapeQuiz() {
 }
 function nextShapeQuestion() {
   shapeLock = false;
-  shapeTarget = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+  shapeTarget = Stats.pick(SHAPES, 'shapes', s => s.id);
+  shapeScored = false; shapeMisses = 0;
   const others = SHAPES.filter(s => s !== shapeTarget).sort(() => Math.random() - 0.5).slice(0, 3);
   const choices = [shapeTarget, ...others].sort(() => Math.random() - 0.5);
   const box = document.getElementById('shapeChoices');
@@ -1897,6 +2017,7 @@ function checkShapeAnswer(s, btn) {
   if (shapeLock) return;
   if (s === shapeTarget) {
     shapeLock = true;
+    if (!shapeScored) { shapeScored = true; Stats.record('shapes', shapeTarget.id, true); }
     btn.classList.add('correct');
     rewardStar(); shapeRoundQ++;
     const q = shapeRoundQ;
@@ -1909,12 +2030,19 @@ function checkShapeAnswer(s, btn) {
     }, 1000);
   } else {
     btn.classList.add('wrong');
+    if (!shapeScored) { shapeScored = true; Stats.record('shapes', shapeTarget.id, false); }
     document.getElementById('shapeMessage').textContent = 'Try again!';
-    scPraise(false);
+    shapeMisses++;
+    if (shapeMisses >= 2) {
+      [...document.getElementById('shapeChoices').children].forEach(b => { if (b.getAttribute('aria-label') === shapeTarget.name) b.classList.add('hint'); });
+      setTimeout(() => playSC('shape_' + shapeTarget.id, shapeTarget.name), 450);
+    } else {
+      scPraise(false);
+    }
     setTimeout(() => btn.classList.remove('wrong'), 600);
   }
 }
-let colorTarget = null, colorRoundQ = 0, colorLock = false;
+let colorTarget = null, colorRoundQ = 0, colorLock = false, colorScored = false, colorMisses = 0;
 function startColorQuiz() {
   colorRoundQ = 0; colorLock = false; pendingStickers = [];
   document.getElementById('colorStars').textContent = '\u2B50 0';
@@ -1923,7 +2051,8 @@ function startColorQuiz() {
 }
 function nextColorQuestion() {
   colorLock = false;
-  colorTarget = COLOR_LIST[Math.floor(Math.random() * COLOR_LIST.length)];
+  colorTarget = Stats.pick(COLOR_LIST, 'colors', c => c.id);
+  colorScored = false; colorMisses = 0;
   const others = COLOR_LIST.filter(c => c !== colorTarget).sort(() => Math.random() - 0.5).slice(0, 3);
   const choices = [colorTarget, ...others].sort(() => Math.random() - 0.5);
   const box = document.getElementById('colorChoices');
@@ -1944,6 +2073,7 @@ function checkColorAnswer(c, btn) {
   if (colorLock) return;
   if (c === colorTarget) {
     colorLock = true;
+    if (!colorScored) { colorScored = true; Stats.record('colors', colorTarget.id, true); }
     btn.classList.add('correct');
     rewardStar(); colorRoundQ++;
     const q = colorRoundQ;
@@ -1956,8 +2086,15 @@ function checkColorAnswer(c, btn) {
     }, 1000);
   } else {
     btn.classList.add('wrong');
+    if (!colorScored) { colorScored = true; Stats.record('colors', colorTarget.id, false); }
     document.getElementById('colorMessage').textContent = 'Try again!';
-    scPraise(false);
+    colorMisses++;
+    if (colorMisses >= 2) {
+      [...document.getElementById('colorChoices').children].forEach(b => { if (b.getAttribute('aria-label') === colorTarget.name) b.classList.add('hint'); });
+      setTimeout(() => playSC('color_' + colorTarget.id, colorTarget.name), 450);
+    } else {
+      scPraise(false);
+    }
     setTimeout(() => btn.classList.remove('wrong'), 600);
   }
 }
