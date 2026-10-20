@@ -315,7 +315,7 @@
     font-weight: 800; text-align: center; padding: 16px; }
   #snakeFinal { font-size: 1.7rem; }
   #snakeMsg { margin-top: 6px; font-size: 1.05rem; }
-  .dpad { display: grid; grid-template-columns: repeat(3, 64px); grid-template-rows: repeat(2, 56px);
+  .dpad { display: grid; grid-template-columns: repeat(3, 74px); grid-template-rows: repeat(2, 62px);
     gap: 6px; justify-content: center; margin: 12px auto 0; }
   .dpad button { font-size: 1.4rem; border: none; border-radius: 14px; background: #fff;
     box-shadow: 0 3px 0 rgba(0,0,0,.18); cursor: pointer; }
@@ -364,7 +364,7 @@
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
   <div style="text-align:center"><button class="grownups-link" onclick="show('grownups')">👤 Grown-ups</button></div>
-  <div class="ver">v3.3</div>
+  <div class="ver">v3.4</div>
 </div>
 
 <!-- REWARDS -->
@@ -1341,7 +1341,7 @@ const Snake = {
     this.cv.addEventListener('pointermove', ev => {
       if (!tracking) return;
       const dx = ev.clientX - sx, dy = ev.clientY - sy;
-      if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return;
+      if (Math.abs(dx) < 14 && Math.abs(dy) < 14) return;
       if (Math.abs(dx) > Math.abs(dy)) this.setDir(Math.sign(dx), 0);
       else this.setDir(0, Math.sign(dy));
       sx = ev.clientX; sy = ev.clientY;
@@ -1389,7 +1389,7 @@ const Snake = {
     const lastDir = this.queue.length ? this.queue[this.queue.length - 1] : this.dir;
     if (lastDir.x === -x && lastDir.y === -y) return;  // no reversing
     if (lastDir.x === x && lastDir.y === y) return;    // no duplicates
-    if (this.queue.length < 3) this.queue.push({ x: x, y: y });
+    if (this.queue.length < 4) this.queue.push({ x: x, y: y });
   },
   spawnFood() {
     const taken = new Set(this.body.map(s => s.x + ',' + s.y));
@@ -1399,7 +1399,7 @@ const Snake = {
       if (!taken.has(x + ',' + y)) free.push({ x: x, y: y });
     this.food = free.length ? free[Math.floor(Math.random() * free.length)] : null;
   },
-  tickMs() { return Math.max(70, 135 - Math.floor(this.score / 50) * 6); },
+  tickMs() { return Math.max(110, 190 - Math.floor(this.score / 50) * 7); },
   loop(t) {
     if (!this.alive) return;
     const dt = Math.min(0.25, (t - this.last) / 1000);
