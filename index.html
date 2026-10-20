@@ -278,6 +278,11 @@
     box-shadow: 0 2px 0 rgba(0,0,0,.1); background: #ffe9a8; }
   .avatar-preview { text-align: center; }
   .avatar-preview svg { width: 150px; height: auto; }
+  .avatar-preview img { height: 190px; width: auto; }
+  .char-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .char-tile { border: 3px solid rgba(0,0,0,.12); background: #fff; border-radius: 16px; padding: 4px; cursor: pointer; }
+  .char-tile.sel { border-color: #3a2b00; background: #fff3bf; }
+  .char-tile img { width: 56px; height: 56px; object-fit: cover; border-radius: 12px; display: block; }
 </style>
 </head>
 <body>
@@ -301,7 +306,7 @@
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
   <div style="text-align:center"><button class="grownups-link" onclick="show('grownups')">👤 Grown-ups</button></div>
-  <div class="ver">v2.3</div>
+  <div class="ver">v2.4</div>
 </div>
 
 <!-- REWARDS -->
@@ -350,16 +355,11 @@
       <input type="file" id="pfPhotoFile" accept="image/*" style="display:none">
       <button class="opt-btn" id="pfPhotoRemove" type="button">Remove</button>
     </div>
-    <div class="pf-label">Build their avatar</div>
+    <div class="pf-label">Pick their character</div>
     <div class="avatar-preview" id="pfAvatarPreview"></div>
-    <div class="pf-label">Skin</div>
-    <div class="swatches" id="pfSkins"></div>
-    <div class="pf-label">Hair style</div>
-    <div class="swatches" id="pfHairStyles"></div>
-    <div class="pf-label">Hair color</div>
-    <div class="swatches" id="pfHairColors"></div>
-    <div class="pf-label">Shirt</div>
-    <div class="swatches" id="pfShirts"></div>
+    <div class="char-grid" id="pfChars"></div>
+    <div class="pf-label">Outfit color</div>
+    <div class="swatches" id="pfColors"></div>
     <button class="save-btn" id="pfSave">💾 Save</button>
     <p class="prog-sub">The name and avatar show in the greeting, the playground, and the app title. Change them any time here.</p>
   </div>
@@ -894,53 +894,17 @@ function numberPool() {
 
 
 /* --- White-label profile: kid name, photo, avatar (all on-device, never uploaded) --- */
-const AVATAR_OPTS = {
-  skins: ['#ffe0bd', '#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#5c3836'],
-  hairStyles: [['short', 'Short'], ['spiky', 'Spiky'], ['curly', 'Curly'], ['pigtails', 'Pigtails'], ['long', 'Long'], ['none', 'None']],
-  hairColors: ['#f7c948', '#b07d2b', '#6b4423', '#26221f', '#d96c33', '#ff8fab'],
-  shirts: ['#4dabf7', '#ff8787', '#69db7c', '#ffd43b', '#b197fc', '#ffa94d', '#3bc9db', '#f783ac']
-};
-function avatarSVG(a, mode) {
-  const cap = '<path d="M56 70 A44 44 0 0 1 144 70 L134 70 A34 34 0 0 0 66 70 Z" fill="' + a.hairColor + '"/>';
-  let back = '', front = '';
-  if (a.hair === 'short') front = cap;
-  else if (a.hair === 'spiky') front = '<path d="M56 72 L63 45 L76 61 L88 41 L100 59 L112 41 L124 61 L137 46 L144 72 L134 72 A34 34 0 0 0 66 72 Z" fill="' + a.hairColor + '"/>';
-  else if (a.hair === 'curly') front = cap
-    + '<circle cx="64" cy="44" r="11" fill="' + a.hairColor + '"/><circle cx="82" cy="34" r="11" fill="' + a.hairColor + '"/>'
-    + '<circle cx="100" cy="30" r="11" fill="' + a.hairColor + '"/><circle cx="118" cy="34" r="11" fill="' + a.hairColor + '"/>'
-    + '<circle cx="136" cy="44" r="11" fill="' + a.hairColor + '"/>';
-  else if (a.hair === 'pigtails') {
-    back = '<circle cx="48" cy="86" r="14" fill="' + a.hairColor + '"/><circle cx="152" cy="86" r="14" fill="' + a.hairColor + '"/>';
-    front = cap + '<circle cx="60" cy="52" r="5.5" fill="#f783ac"/><circle cx="140" cy="52" r="5.5" fill="#f783ac"/>';
-  }
-  else if (a.hair === 'long') {
-    back = '<rect x="50" y="56" width="18" height="84" rx="9" fill="' + a.hairColor + '"/><rect x="132" y="56" width="18" height="84" rx="9" fill="' + a.hairColor + '"/>';
-    front = cap;
-  }
-  const body = '<rect x="79" y="184" width="17" height="46" rx="7" fill="#4a6fa5"/><rect x="104" y="184" width="17" height="46" rx="7" fill="#4a6fa5"/>'
-    + '<ellipse cx="85" cy="234" rx="14" ry="7" fill="#5a4632"/><ellipse cx="115" cy="234" rx="14" ry="7" fill="#5a4632"/>'
-    + '<rect x="33" y="118" width="17" height="56" rx="8" fill="' + a.skin + '"/><rect x="150" y="118" width="17" height="56" rx="8" fill="' + a.skin + '"/>'
-    + '<rect x="54" y="106" width="92" height="84" rx="22" fill="' + a.shirt + '"/>'
-    + '<circle cx="43" cy="120" r="14" fill="' + a.shirt + '"/><circle cx="157" cy="120" r="14" fill="' + a.shirt + '"/>';
-  const head = '<circle cx="100" cy="64" r="42" fill="' + a.skin + '"/>';
-  const face = '<circle cx="86" cy="66" r="4.5" fill="#2b2118"/><circle cx="114" cy="66" r="4.5" fill="#2b2118"/>'
-    + '<ellipse cx="74" cy="79" rx="6" ry="4" fill="#ff9d9d" opacity=".55"/><ellipse cx="126" cy="79" rx="6" ry="4" fill="#ff9d9d" opacity=".55"/>'
-    + '<path d="M88 81 Q100 91 112 81" stroke="#2b2118" stroke-width="3" fill="none" stroke-linecap="round"/>';
-  const vb = mode === 'face' ? '52 16 96 96' : '0 0 200 244';
-  return '<svg viewBox="' + vb + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="avatar">' + body + back + head + face + front + '</svg>';
-}
-
 const Profile = {
   KEY: 'ba_profile_v1',
   data: null,
   origPhoto: null,
   origThumb: null,
-  DEFAULT_AVATAR: { skin: '#f1c27d', hair: 'short', hairColor: '#f7c948', shirt: '#4dabf7' },
+  DEFAULT_AVATAR: { char: 'brantley', color: 0 },
   load() {
     try { this.data = JSON.parse(localStorage.getItem(this.KEY)); } catch (e) { this.data = null; }
     if (!this.data || typeof this.data !== 'object')
       this.data = { name: '', photo: null, avatar: Object.assign({}, this.DEFAULT_AVATAR), setupDone: false };
-    if (!this.data.avatar) this.data.avatar = Object.assign({}, this.DEFAULT_AVATAR);
+    if (!this.data.avatar || !this.data.avatar.char) this.data.avatar = Object.assign({}, this.DEFAULT_AVATAR);
   },
   save() { try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) {} },
   isCustom() { return !!this.data.setupDone; },
@@ -958,7 +922,7 @@ const Profile = {
     const slot = document.getElementById('greetAvatar');
     if (slot) {
       if (this.data.photo) slot.innerHTML = '<img class="avatar" src="' + this.data.photo + '" alt="">';
-      else if (this.isCustom()) slot.innerHTML = avatarSVG(this.data.avatar, 'face').replace('<svg ', '<svg class="avatar" ');
+      else if (this.isCustom() && typeof AV_ART !== 'undefined' && AV_ART[this.data.avatar.char]) slot.innerHTML = '<img class="avatar" src="' + AV_ART[this.data.avatar.char].face + '" alt="">';
       else if (this.origPhoto) slot.innerHTML = '<img class="avatar" src="' + this.origPhoto + '" alt="">';
     }
     const st = document.getElementById('songThumb');
@@ -1009,30 +973,28 @@ function renderPfPhoto() {
   else { img.removeAttribute('src'); img.style.visibility = 'hidden'; }
 }
 function renderPfBuilder() {
-  document.getElementById('pfAvatarPreview').innerHTML = avatarSVG(pfDraft.avatar, 'full');
-  const sw = (hostId, colors, key) => {
-    const host = document.getElementById(hostId);
-    host.innerHTML = '';
-    colors.forEach(c => {
-      const b = document.createElement('button');
-      b.className = 'swatch' + (pfDraft.avatar[key] === c ? ' sel' : '');
-      b.style.background = c;
-      b.setAttribute('aria-label', c);
-      b.onclick = () => { pfDraft.avatar[key] = c; renderPfBuilder(); };
-      host.appendChild(b);
-    });
-  };
-  sw('pfSkins', AVATAR_OPTS.skins, 'skin');
-  sw('pfHairColors', AVATAR_OPTS.hairColors, 'hairColor');
-  sw('pfShirts', AVATAR_OPTS.shirts, 'shirt');
-  const hs = document.getElementById('pfHairStyles');
-  hs.innerHTML = '';
-  AVATAR_OPTS.hairStyles.forEach(pair => {
+  if (!AV_ART[pfDraft.avatar.char]) pfDraft.avatar.char = 'brantley';
+  const av = AV_ART[pfDraft.avatar.char];
+  if (pfDraft.avatar.color >= av.full.length) pfDraft.avatar.color = 0;
+  document.getElementById('pfAvatarPreview').innerHTML = '<img src="' + av.full[pfDraft.avatar.color] + '" alt="">';
+  const host = document.getElementById('pfChars');
+  host.innerHTML = '';
+  AV_ORDER.forEach(cid => {
     const b = document.createElement('button');
-    b.className = 'opt-btn' + (pfDraft.avatar.hair === pair[0] ? ' sel' : '');
-    b.textContent = pair[1];
-    b.onclick = () => { pfDraft.avatar.hair = pair[0]; renderPfBuilder(); };
-    hs.appendChild(b);
+    b.className = 'char-tile' + (pfDraft.avatar.char === cid ? ' sel' : '');
+    b.innerHTML = '<img src="' + AV_ART[cid].face + '" alt="">';
+    b.onclick = () => { pfDraft.avatar.char = cid; if (pfDraft.avatar.color >= AV_ART[cid].full.length) pfDraft.avatar.color = 0; renderPfBuilder(); };
+    host.appendChild(b);
+  });
+  const ch = document.getElementById('pfColors');
+  ch.innerHTML = '';
+  AV_COLORS[pfDraft.avatar.char].forEach((hex, i) => {
+    const b = document.createElement('button');
+    b.className = 'swatch' + (pfDraft.avatar.color === i ? ' sel' : '');
+    b.style.background = hex;
+    b.setAttribute('aria-label', 'outfit color ' + (i + 1));
+    b.onclick = () => { pfDraft.avatar.color = i; renderPfBuilder(); };
+    ch.appendChild(b);
   });
 }
 document.getElementById('pfPhotoFile').addEventListener('change', ev => {
@@ -1108,8 +1070,9 @@ function renderPgKids(scene) {
     d.dataset.y = pos.y;
     const isHero = k.img === 'brantley';
     const dispName = isHero ? Profile.displayName() : k.name;
-    d.innerHTML = (isHero && Profile.isCustom())
-      ? avatarSVG(Profile.data.avatar, 'full')
+    const avArt = (isHero && Profile.isCustom() && typeof AV_ART !== 'undefined') ? AV_ART[Profile.data.avatar.char] : null;
+    d.innerHTML = avArt
+      ? '<img src="' + avArt.full[Math.min(Profile.data.avatar.color || 0, avArt.full.length - 1)] + '" alt="' + dispName + '">'
       : '<img src="' + PG_ART[k.img] + '" alt="' + dispName + '">';
     scene.appendChild(d);
     makeKidDraggable(d, Object.assign({}, k, { name: dispName }), scene);
@@ -2155,6 +2118,9 @@ function askNumberAgain(){speakNumber(numTarget);}
 function checkNumberAnswer(n){if(numLock)return;if(n===numTarget){numLock=true;if(!numScored){numScored=true;Stats.record('numbers',numTarget,true);}numScore++;rewardStar();numRoundQ++;const q=numRoundQ;document.getElementById('numberStars').textContent='\u2B50 '+numScore;document.getElementById('numberMessage').textContent='\uD83C\uDF89 That\'s right!';setTimeout(()=>{if(q>=10){endRound('numberQuiz',startNumberQuiz,'numbers');}else{nextNumberQuestion();}},850);}else{if(!numScored){numScored=true;Stats.record('numbers',numTarget,false);}numMisses++;document.getElementById('numberMessage').textContent='Try again! Listen one more time.';if(numMisses>=2){[...document.getElementById('numberQuizChoices').children].forEach(b=>{if(b.textContent===String(numTarget))b.classList.add('hint');});}setTimeout(askNumberAgain,200);}}
 
 /* --- shapes & colors audio (Aria) --- */
+
+const AV_COLORS = {"brantley": ["#0199fa", "#fa0000", "#fa7500", "#f9d000", "#00fa2a", "#8600fa"], "mia": ["#783454", "#73323d", "#cc8847", "#d7c14e", "#75fd8c", "#5891e0"], "jay": ["#e36f27", "#e2c325", "#26e346", "#2685e4", "#8b26e3", "#e4267f"], "puffs": ["#fed548", "#ff4848", "#49ff66", "#48a4fe", "#aa48ff", "#fe489c"], "blueboy": ["#0096f8", "#f80000", "#f97301", "#f8cf00", "#00f829", "#8300f7"], "redhair": ["#8c53d1", "#d15453", "#d18d52", "#d2bc54", "#53d169", "#5391d1"], "spiky": ["#e12925", "#e27c23", "#e3c124", "#23e143", "#2383e2", "#8923e0"], "longblack": ["#00a5a2", "#a50000", "#a54d00", "#a68a01", "#00a51c", "#0152a6"], "curly": ["#ed479d", "#ee4847", "#ed9548", "#edd146", "#47ec63", "#469aed"]};
+const AV_ORDER = ['brantley', 'mia', 'jay', 'puffs', 'blueboy', 'redhair', 'spiky', 'longblack', 'curly'];
 
 /* --- shapes & colors --- */
 const SHAPES = [
