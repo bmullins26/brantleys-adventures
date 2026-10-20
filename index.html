@@ -217,6 +217,20 @@
   .reward-count { text-align: center; font-weight: 800; color: #3a2b00; font-size: 1.05rem; }
   #rewardBody { font-size: 1.15rem; font-weight: 700; color: #3a2b00; margin-bottom: 18px; line-height: 1.5; }
   #rewardBody .big { font-size: 3rem; display: block; margin-bottom: 6px; }
+
+  /* --- shapes & colors --- */
+  .sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px 8px; }
+  .sc-card { background: #fff; border-radius: 22px; border: 0; padding: 18px 10px 12px;
+    font-family: inherit; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,.08); }
+  .sc-card:active { transform: scale(.95); }
+  .sc-card svg { width: 86px; height: 86px; }
+  .sc-card .sc-name { display: block; font-weight: 800; font-size: 1.2rem; color: #3a2b00; margin-top: 6px; }
+  .sc-blob { width: 78px; height: 78px; border-radius: 50%; margin: 0 auto;
+    border: 3px solid rgba(0,0,0,.10); }
+  .sc-obj { font-size: 2.1rem; display: block; margin-top: 5px; }
+  .sc-choice { padding: 14px 6px; }
+  .sc-choice svg { width: 74px; height: 74px; }
+  .sc-choice .sc-blob { width: 66px; height: 66px; }
 </style>
 </head>
 <body>
@@ -232,12 +246,14 @@
   <div class="home-grid">
     <button class="home-card tint-blue" onclick="show('alpha')"><span class="hc-icon">🔤</span><span class="hc-title">Alphabet</span><span class="hc-sub">Letters &amp; sounds</span></button>
     <button class="home-card tint-peach" onclick="show('numbers')"><span class="hc-icon">🔢</span><span class="hc-title">Numbers</span><span class="hc-sub">Count 1 to 20</span></button>
+    <button class="home-card tint-purple" onclick="show('shapesHub')"><span class="hc-icon">🔷</span><span class="hc-title">Shapes</span><span class="hc-sub">Learn &amp; play</span></button>
+    <button class="home-card tint-yellow" onclick="show('colorsHub')"><span class="hc-icon">🌈</span><span class="hc-title">Colors</span><span class="hc-sub">Learn &amp; play</span></button>
     <button class="home-card tint-pink" onclick="show('color')"><span class="hc-icon">🎨</span><span class="hc-title">Color Fun</span><span class="hc-sub">Paint pictures</span></button>
     <button class="home-card tint-green" onclick="show('song')"><span class="hc-icon">🎵</span><span class="hc-title">Jam Out</span><span class="hc-sub">Sing with Brantley</span></button>
     <button class="home-card tint-purple wide" onclick="show('games')"><span class="hc-icon">🎮</span><span class="hc-title">Games</span><span class="hc-sub">Tic tac toe &amp; more</span></button>
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
-  <div class="ver">v31</div>
+  <div class="ver">v2.1</div>
 </div>
 
 <!-- REWARDS -->
@@ -325,6 +341,67 @@
     <button class="home-card tint-peach" onclick="show('learnNumbers')"><span class="hc-icon">🔢</span><span class="hc-title">Learn Numbers</span><span class="hc-sub">Count 1 to 20</span></button>
     <button class="home-card tint-purple" onclick="startNumberQuiz()"><span class="hc-icon">⭐</span><span class="hc-title">Number Quiz</span><span class="hc-sub">Test yourself</span></button>
   </div>
+</div>
+
+
+<!-- SHAPES -->
+<div id="shapesHub" class="screen">
+  <button class="back-btn" onclick="show('home')">⬅ Home</button>
+  <h1>🔷 Shapes</h1>
+  <p class="subtitle">Shapes are everywhere!</p>
+  <div class="home-grid">
+    <button class="home-card tint-purple" onclick="show('learnShapes')"><span class="hc-icon">🔷</span><span class="hc-title">Learn Shapes</span><span class="hc-sub">Hear each shape</span></button>
+    <button class="home-card tint-blue" onclick="startShapeQuiz()"><span class="hc-icon">🎯</span><span class="hc-title">Shape Quiz</span><span class="hc-sub">Test yourself</span></button>
+  </div>
+</div>
+
+<div id="learnShapes" class="screen">
+  <button class="back-btn" onclick="show('shapesHub')">⬅ Shapes</button>
+  <h1>🔷 Learn Shapes</h1>
+  <p class="subtitle">Tap a shape to hear its name!</p>
+  <div class="sc-grid" id="shapeGrid"></div>
+</div>
+
+<div id="shapeQuiz" class="screen">
+  <button class="back-btn" onclick="show('shapesHub')">⬅ Shapes</button>
+  <h1>🎯 Shape Quiz</h1>
+  <div class="stars" id="shapeStars">⭐ 0</div>
+  <div class="quiz-prompt">
+    <span class="speaker">🔊</span>
+    <span id="shapeQuestion">Tap the shape you hear!</span>
+  </div>
+  <div class="quiz-choices" id="shapeChoices"></div>
+  <p class="subtitle" id="shapeMessage"></p>
+</div>
+
+<!-- COLORS -->
+<div id="colorsHub" class="screen">
+  <button class="back-btn" onclick="show('home')">⬅ Home</button>
+  <h1>🌈 Colors</h1>
+  <p class="subtitle">What color is it?</p>
+  <div class="home-grid">
+    <button class="home-card tint-yellow" onclick="show('learnColors')"><span class="hc-icon">🌈</span><span class="hc-title">Learn Colors</span><span class="hc-sub">Hear each color</span></button>
+    <button class="home-card tint-pink" onclick="startColorQuiz()"><span class="hc-icon">🎯</span><span class="hc-title">Color Quiz</span><span class="hc-sub">Test yourself</span></button>
+  </div>
+</div>
+
+<div id="learnColors" class="screen">
+  <button class="back-btn" onclick="show('colorsHub')">⬅ Colors</button>
+  <h1>🌈 Learn Colors</h1>
+  <p class="subtitle">Tap a color to hear its name!</p>
+  <div class="sc-grid" id="colorGrid"></div>
+</div>
+
+<div id="colorQuiz" class="screen">
+  <button class="back-btn" onclick="show('colorsHub')">⬅ Colors</button>
+  <h1>🎯 Color Quiz</h1>
+  <div class="stars" id="colorStars">⭐ 0</div>
+  <div class="quiz-prompt">
+    <span class="speaker">🔊</span>
+    <span id="colorQuestion">Tap the color you hear!</span>
+  </div>
+  <div class="quiz-choices" id="colorChoices"></div>
+  <p class="subtitle" id="colorMessage"></p>
 </div>
 
 <!-- LEARN -->
@@ -852,6 +929,27 @@ function endRound(quizId, againFn, menuId) {
     show(menuId);
   };
 }
+
+/* --- star-only round end (shapes/colors quizzes: stars + stickers, no pieces) --- */
+function endStarRound(againFn, menuId) {
+  const got = pendingStickers.splice(0);
+  let body = '';
+  if (got.length) body = '<span class="big">' + got[0].e + '</span>New sticker: <b>' + got[0].n + '</b>! (' + Rewards.data.stickers.length + ' of 20)';
+  else body = '<span class="big">\u2B50</span>Great job! You earned 10 stars!';
+  document.getElementById('rewardTitle').textContent = '\uD83C\uDF89 Round Complete!';
+  document.getElementById('rewardBody').innerHTML = body;
+  document.getElementById('rewardModal').style.display = 'flex';
+  if (typeof confettiBurst === 'function') confettiBurst();
+  document.getElementById('rewardAgain').onclick = () => {
+    document.getElementById('rewardModal').style.display = 'none';
+    againFn();
+  };
+  document.getElementById('rewardMenu').onclick = () => {
+    document.getElementById('rewardModal').style.display = 'none';
+    show(menuId);
+  };
+}
+
 
 
 </script>
@@ -1688,6 +1786,183 @@ function startNumberQuiz(){numScore=0;numRoundQ=0;pendingStickers=[];document.ge
 function nextNumberQuestion(){numTarget=1+Math.floor(Math.random()*20);const choices=[numTarget];while(choices.length<4){let n=1+Math.floor(Math.random()*20);if(!choices.includes(n))choices.push(n);}choices.sort(()=>Math.random()-.5);const box=document.getElementById('numberQuizChoices');box.innerHTML='';document.getElementById('numberMessage').textContent='';choices.forEach(n=>{const b=document.createElement('button');b.className='quiz-choice';b.textContent=n;b.onclick=(()=>{const k=n;return()=>checkNumberAnswer(k);})();box.appendChild(b);});setTimeout(()=>speakNumber(numTarget),180);}
 function askNumberAgain(){speakNumber(numTarget);}
 function checkNumberAnswer(n){if(n===numTarget){numScore++;rewardStar();numRoundQ++;document.getElementById('numberStars').textContent='\u2B50 '+numScore;document.getElementById('numberMessage').textContent='\uD83C\uDF89 That\'s right!';setTimeout(()=>{if(numRoundQ>=10){endRound('numberQuiz',startNumberQuiz,'numbers');}else{nextNumberQuestion();}},850);}else{document.getElementById('numberMessage').textContent='Try again! Listen one more time.';setTimeout(askNumberAgain,200);}}
+
+/* --- shapes & colors audio (Aria) --- */
+
+/* --- shapes & colors --- */
+const SHAPES = [
+  { id: 'circle', name: 'Circle', color: '#ff6b6b', svg: '<circle cx="50" cy="50" r="38"/>' },
+  { id: 'square', name: 'Square', color: '#4dabf7', svg: '<rect x="15" y="15" width="70" height="70" rx="10"/>' },
+  { id: 'triangle', name: 'Triangle', color: '#51cf66', svg: '<polygon points="50,12 90,86 10,86"/>' },
+  { id: 'rectangle', name: 'Rectangle', color: '#ffa94d', svg: '<rect x="6" y="28" width="88" height="44" rx="10"/>' },
+  { id: 'oval', name: 'Oval', color: '#9775fa', svg: '<ellipse cx="50" cy="50" rx="42" ry="27"/>' },
+  { id: 'diamond', name: 'Diamond', color: '#f783ac', svg: '<polygon points="50,8 88,50 50,92 12,50"/>' },
+  { id: 'star', name: 'Star', color: '#ffd43b', svg: '<polygon points="50,6 61,38 95,38 68,58 78,92 50,71 22,92 32,58 5,38 39,38"/>' },
+  { id: 'heart', name: 'Heart', color: '#ff8787', svg: '<path d="M50 84 C20 62 12 44 12 31 C12 17 22 9 33 9 C41 9 48 14 50 21 C52 14 59 9 67 9 C78 9 88 17 88 31 C88 44 80 62 50 84Z"/>' }
+];
+const COLOR_LIST = [
+  { id: 'red', name: 'Red', hex: '#ff5252', obj: '\uD83C\uDF4E' },
+  { id: 'blue', name: 'Blue', hex: '#4dabf7', obj: '\uD83D\uDC33' },
+  { id: 'yellow', name: 'Yellow', hex: '#ffd43b', obj: '\uD83C\uDF4C' },
+  { id: 'green', name: 'Green', hex: '#51cf66', obj: '\uD83D\uDC38' },
+  { id: 'orange', name: 'Orange', hex: '#ffa94d', obj: '\uD83C\uDF4A' },
+  { id: 'purple', name: 'Purple', hex: '#9775fa', obj: '\uD83C\uDF47' },
+  { id: 'pink', name: 'Pink', hex: '#f783ac', obj: '\uD83D\uDC37' },
+  { id: 'brown', name: 'Brown', hex: '#8d6e63', obj: '\uD83D\uDC3B' },
+  { id: 'black', name: 'Black', hex: '#343a40', obj: '\uD83C\uDFA9' },
+  { id: 'white', name: 'White', hex: '#ffffff', obj: '\uD83D\uDC11' }
+];
+let scAudioEl = null;
+function scSpeak(text) {
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = .9; u.pitch = 1.1; speechSynthesis.speak(u); } catch (e) {}
+}
+function playSC(key, fallback) {
+  try {
+    if (scAudioEl) scAudioEl.pause();
+    if (SC_AUDIO[key]) {
+      scAudioEl = new Audio(SC_AUDIO[key]);
+      scAudioEl.play().catch(() => scSpeak(fallback));
+      return;
+    }
+  } catch (e) {}
+  scSpeak(fallback);
+}
+function shapeSVG(s) {
+  return '<svg viewBox="0 0 100 100"><g fill="' + s.color + '" stroke="rgba(0,0,0,.18)" stroke-width="2">' + s.svg + '</g></svg>';
+}
+function colorBlob(c, big) {
+  return '<div class="sc-blob" style="background:' + c.hex + '"></div>';
+}
+function renderLearnShapes() {
+  const g = document.getElementById('shapeGrid');
+  if (!g) return;
+  g.innerHTML = '';
+  SHAPES.forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'sc-card';
+    b.innerHTML = shapeSVG(s) + '<span class="sc-name">' + s.name + '</span>';
+    b.onclick = () => playSC('shape_' + s.id, s.name);
+    g.appendChild(b);
+  });
+}
+function renderLearnColors() {
+  const g = document.getElementById('colorGrid');
+  if (!g) return;
+  g.innerHTML = '';
+  COLOR_LIST.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'sc-card';
+    b.innerHTML = colorBlob(c) + '<span class="sc-obj">' + c.obj + '</span><span class="sc-name">' + c.name + '</span>';
+    b.onclick = () => playSC('color_' + c.id, c.name);
+    g.appendChild(b);
+  });
+}
+function scPraise(ok) {
+  if (ok) {
+    const praises = ['Great job!', 'Awesome!', 'You did it!', 'Super!', 'Way to go!'];
+    const pi = Math.floor(Math.random() * praises.length);
+    playSound('praise_' + pi, praises[pi], 1);
+    confettiBurst();
+  } else {
+    playSound('tryagain', 'Try again!', 0.9);
+  }
+}
+let shapeTarget = null, shapeRoundQ = 0, shapeLock = false;
+function startShapeQuiz() {
+  shapeRoundQ = 0; shapeLock = false; pendingStickers = [];
+  document.getElementById('shapeStars').textContent = '\u2B50 0';
+  show('shapeQuiz');
+  nextShapeQuestion();
+}
+function nextShapeQuestion() {
+  shapeLock = false;
+  shapeTarget = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+  const others = SHAPES.filter(s => s !== shapeTarget).sort(() => Math.random() - 0.5).slice(0, 3);
+  const choices = [shapeTarget, ...others].sort(() => Math.random() - 0.5);
+  const box = document.getElementById('shapeChoices');
+  box.innerHTML = '';
+  document.getElementById('shapeMessage').textContent = '';
+  document.getElementById('shapeQuestion').textContent = 'Tap the ' + shapeTarget.name.toLowerCase() + '!';
+  choices.forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'quiz-choice sc-choice';
+    b.innerHTML = shapeSVG(s);
+    b.setAttribute('aria-label', s.name);
+    b.onclick = () => checkShapeAnswer(s, b);
+    box.appendChild(b);
+  });
+  setTimeout(() => playSC('shape_' + shapeTarget.id, shapeTarget.name), 250);
+}
+function checkShapeAnswer(s, btn) {
+  if (shapeLock) return;
+  if (s === shapeTarget) {
+    shapeLock = true;
+    btn.classList.add('correct');
+    rewardStar(); shapeRoundQ++;
+    const q = shapeRoundQ;
+    document.getElementById('shapeStars').textContent = '\u2B50 ' + shapeRoundQ;
+    document.getElementById('shapeMessage').textContent = '\uD83C\uDF89 That\'s right!';
+    scPraise(true);
+    setTimeout(() => {
+      if (q >= 10) endStarRound(startShapeQuiz, 'shapesHub');
+      else nextShapeQuestion();
+    }, 1000);
+  } else {
+    btn.classList.add('wrong');
+    document.getElementById('shapeMessage').textContent = 'Try again!';
+    scPraise(false);
+    setTimeout(() => btn.classList.remove('wrong'), 600);
+  }
+}
+let colorTarget = null, colorRoundQ = 0, colorLock = false;
+function startColorQuiz() {
+  colorRoundQ = 0; colorLock = false; pendingStickers = [];
+  document.getElementById('colorStars').textContent = '\u2B50 0';
+  show('colorQuiz');
+  nextColorQuestion();
+}
+function nextColorQuestion() {
+  colorLock = false;
+  colorTarget = COLOR_LIST[Math.floor(Math.random() * COLOR_LIST.length)];
+  const others = COLOR_LIST.filter(c => c !== colorTarget).sort(() => Math.random() - 0.5).slice(0, 3);
+  const choices = [colorTarget, ...others].sort(() => Math.random() - 0.5);
+  const box = document.getElementById('colorChoices');
+  box.innerHTML = '';
+  document.getElementById('colorMessage').textContent = '';
+  document.getElementById('colorQuestion').textContent = 'Tap the ' + colorTarget.name.toLowerCase() + ' one!';
+  choices.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'quiz-choice sc-choice';
+    b.innerHTML = colorBlob(c);
+    b.setAttribute('aria-label', c.name);
+    b.onclick = () => checkColorAnswer(c, b);
+    box.appendChild(b);
+  });
+  setTimeout(() => playSC('color_' + colorTarget.id, colorTarget.name), 250);
+}
+function checkColorAnswer(c, btn) {
+  if (colorLock) return;
+  if (c === colorTarget) {
+    colorLock = true;
+    btn.classList.add('correct');
+    rewardStar(); colorRoundQ++;
+    const q = colorRoundQ;
+    document.getElementById('colorStars').textContent = '\u2B50 ' + colorRoundQ;
+    document.getElementById('colorMessage').textContent = '\uD83C\uDF89 That\'s right!';
+    scPraise(true);
+    setTimeout(() => {
+      if (q >= 10) endStarRound(startColorQuiz, 'colorsHub');
+      else nextColorQuestion();
+    }, 1000);
+  } else {
+    btn.classList.add('wrong');
+    document.getElementById('colorMessage').textContent = 'Try again!';
+    scPraise(false);
+    setTimeout(() => btn.classList.remove('wrong'), 600);
+  }
+}
+renderLearnShapes();
+renderLearnColors();
 
 ColorFun.init();
 renderNumbers();
