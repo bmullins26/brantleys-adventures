@@ -341,35 +341,6 @@
   .pulse { animation: tpulse 0.8s ease-in-out infinite alternate; }
   @keyframes tpulse { from { transform: scale(1); } to { transform: scale(1.09); } }
 
-  /* --- Read section --- */
-  .book-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
-  .book-cover { border: none; border-radius: 16px; padding: 16px 8px 12px; background: linear-gradient(160deg, #7ec8f7, #4a90d9); color: #fff; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,.18); font-family: inherit; }
-  .book-cover .bc-pic { font-size: 44px; display: block; }
-  .book-cover .bc-title { font-weight: 800; font-size: 17px; display: block; margin-top: 6px; }
-  .book-cover .bc-sub { font-size: 12px; opacity: .92; display: block; }
-  .book-cover.done { background: linear-gradient(160deg, #51cf66, #2f9e44); }
-  .book-cover.locked { background: #ced4da; color: #868e96; cursor: default; box-shadow: none; }
-  .book-cover.next { outline: 4px solid #ffd43b; }
-  @keyframes rdwiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-4deg) scale(1.07); } 75% { transform: rotate(4deg) scale(1.07); } }
-  .wiggle { animation: rdwiggle .5s ease 2; }
-  .rd-word-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 10px 0; }
-  .rd-chip { border: 2px solid #ced4da; background: #fff; border-radius: 999px; padding: 6px 14px; font-weight: 800; font-size: 17px; cursor: pointer; font-family: inherit; }
-  .rd-chip.done { border-color: #2f9e44; background: #d3f9d8; }
-  .rd-card { background: #fff; border-radius: 20px; padding: 18px 12px; box-shadow: 0 4px 14px rgba(0,0,0,.12); text-align: center; }
-  .rd-letters { display: flex; gap: 6px; justify-content: center; margin: 8px 0; flex-wrap: wrap; }
-  .rd-letter { font-size: 58px; font-weight: 800; min-width: 62px; height: 76px; border-radius: 14px; border: 3px solid #e9ecef; background: #f8f9fa; cursor: pointer; font-family: inherit; }
-  .rd-letter.lit { border-color: #ffd43b; background: #fff3bf; }
-  .rd-pic { font-size: 84px; line-height: 1.15; min-height: 96px; }
-  .rd-sent { font-size: 34px; font-weight: 800; text-align: center; margin: 12px 0; line-height: 1.5; }
-  .rd-sent .w { cursor: pointer; border-radius: 8px; padding: 0 4px; }
-  .rd-sent .w.lit { background: #fff3bf; }
-  .rd-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
-  .rd-arrow { font-size: 24px; border: none; border-radius: 999px; width: 60px; height: 60px; background: #4a90d9; color: #fff; cursor: pointer; }
-  .rd-arrow:disabled { background: #ced4da; }
-  .rd-opts { display: flex; gap: 14px; justify-content: center; }
-  .rd-opt { font-size: 62px; border: 3px solid #e9ecef; background: #fff; border-radius: 20px; width: 108px; height: 108px; cursor: pointer; }
-  .rd-opt.correct { border-color: #2f9e44; background: #d3f9d8; }
-  .rd-opt.wrong { border-color: #e03131; background: #ffe3e3; }
 </style>
 </head>
 <body>
@@ -388,14 +359,13 @@
     <button class="home-card tint-purple" onclick="show('shapesHub')"><span class="hc-icon">🔷</span><span class="hc-title">Shapes</span><span class="hc-sub">Learn &amp; play</span></button>
     <button class="home-card tint-yellow" onclick="show('colorsHub')"><span class="hc-icon">🌈</span><span class="hc-title">Colors</span><span class="hc-sub">Learn &amp; play</span></button>
     <button class="home-card tint-peach" onclick="show('write')"><span class="hc-icon">✏️</span><span class="hc-title">Write</span><span class="hc-sub">Trace letters</span></button>
-    <button class="home-card tint-sky" onclick="show('read')"><span class="hc-icon">📖</span><span class="hc-title">Read</span><span class="hc-sub">Read a book!</span></button>
     <button class="home-card tint-pink" onclick="show('color')"><span class="hc-icon">🎨</span><span class="hc-title">Color Fun</span><span class="hc-sub">Paint pictures</span></button>
     <button class="home-card tint-green" onclick="show('song')"><span class="hc-icon">🎵</span><span class="hc-title">Jam Out</span><span class="hc-sub" id="jamSub">Sing with Brantley</span></button>
     <button class="home-card tint-purple wide" onclick="show('games')"><span class="hc-icon">🎮</span><span class="hc-title">Games</span><span class="hc-sub">Tic tac toe &amp; more</span></button>
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
   <div style="text-align:center"><button class="grownups-link" onclick="show('grownups')">👤 Grown-ups</button></div>
-  <div class="ver">v3.9</div>
+  <div class="ver">v3.10</div>
 </div>
 
 <!-- REWARDS -->
@@ -490,32 +460,6 @@
   </div>
 </div>
 
-
-<!-- READ -->
-<div id="read" class="screen">
-  <button class="back-btn" onclick="show('home')">⬅ Home</button>
-  <h1>📖 Read a Book</h1>
-  <p class="subtitle" id="readProg"></p>
-  <div class="book-shelf" id="readShelf"></div>
-</div>
-
-<div id="book" class="screen">
-  <button class="back-btn" onclick="show('read')">⬅ Books</button>
-  <h1 id="bookTitle">📖</h1>
-  <div id="bookStage"></div>
-</div>
-
-<!-- read-finish popup -->
-<div id="readModal" class="modal" style="display:none">
-  <div class="modal-card">
-    <div class="modal-title" id="readTitle">🎉</div>
-    <div id="readBody"></div>
-    <div class="modal-row">
-      <button class="modal-btn no" id="readAgain">🔁 Read it again</button>
-      <button class="modal-btn yes" id="readShelfBtn" style="background:#2f9e44">📚 My books</button>
-    </div>
-  </div>
-</div>
 
 <!-- GAMES -->
 <div id="games" class="screen">
@@ -1591,7 +1535,6 @@ const Snake = {
 
 /* --- Trace audio: Aria letter names + name praise (registered into GAME_AUDIO) --- */
 
-/* --- Read section audio (phonemes + Book 1) --- */
 
 /* --- Letter Tracing: trace letters + your name, coverage-detected --- */
 const Trace = {
@@ -1899,167 +1842,6 @@ const Trace = {
   }
 };
 
-
-/* --- Read: decodable mini-books (shelf, blend warmup, story, check) --- */
-const BOOKS = [
-  { id: 'b1', title: 'Sam Sat', pic: '\uD83E\uDDD2\uD83D\uDC1C', stage: 1,
-    words: [ { w: 'Sam', pic: '\uD83E\uDDD2' }, { w: 'sat', pic: '\uD83E\uDE91' }, { w: 'pat', pic: '\u270B' }, { w: 'tap', pic: '\uD83E\uDD41' }, { w: 'nap', pic: '\uD83D\uDE34' } ],
-    wordClips: { sam: 'b1_w_sam', sat: 'b1_w_sat', pat: 'b1_w_pat', tap: 'b1_w_tap', nap: 'b1_w_nap', an: 'b1_w_an', ant: 'b1_w_ant', pats: 'b1_w_pats', naps: 'b1_w_naps', the: 'b1_w_the' },
-    pages: [ { pic: '\uD83E\uDDD2\uD83E\uDE91', text: 'Sam sat.', clip: 'b1_s1' }, { pic: '\uD83D\uDC1C', text: 'An ant sat.', clip: 'b1_s2' }, { pic: '\uD83E\uDDD2\uD83D\uDC1C', text: 'Sam pats the ant.', clip: 'b1_s3' }, { pic: '\uD83E\uDD41', text: 'Tap, tap, tap!', clip: 'b1_s4' }, { pic: '\uD83E\uDDD2\uD83D\uDCA4', text: 'Sam naps.', clip: 'b1_s5' } ],
-    check: { q: 'What did Sam pat?', clip: 'b1_q', opts: [ { pic: '\uD83D\uDC1C', ok: true }, { pic: '\uD83E\uDD41', ok: false }, { pic: '\uD83E\uDE91', ok: false } ] } }
-];
-const Read = {
-  KEY: 'ba_read_v1', data: { done: [] }, _ready: false,
-  bi: 0, phase: 'warm', blended: {}, curWord: 0, page: 0, miss: 0, _tok: 0,
-  init() {
-    if (this._ready) return; this._ready = true;
-    try { const d = JSON.parse(localStorage.getItem(this.KEY)); if (d && Array.isArray(d.done)) this.data = d; } catch (e) {}
-    if (typeof RD_AUDIO !== 'undefined') for (const k in RD_AUDIO) GAME_AUDIO[k] = RD_AUDIO[k];
-    const ra = document.getElementById('readAgain'), rs = document.getElementById('readShelfBtn');
-    if (ra) ra.onclick = () => { document.getElementById('readModal').style.display = 'none'; this.openBook(this.bi); };
-    if (rs) rs.onclick = () => { document.getElementById('readModal').style.display = 'none'; show('read'); };
-  },
-  peekDone() { this.init(); return this.data.done.length; },
-  save() { try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) {} },
-  book() { return BOOKS[this.bi]; },
-  isDone(id) { return this.data.done.indexOf(id) >= 0; },
-  unlocked(i) { return i === 0 || this.isDone(BOOKS[i - 1].id); },
-  stop() { this._tok++; },
-  stars(n) { for (let i = 0; i < n; i++) rewardStar(); },
-  renderShelf() {
-    this.init();
-    document.getElementById('readProg').textContent = 'Books read: ' + this.data.done.length + ' of ' + BOOKS.length;
-    const sh = document.getElementById('readShelf'); sh.innerHTML = '';
-    BOOKS.forEach((b, i) => {
-      const btn = document.createElement('button');
-      const un = this.unlocked(i), done = this.isDone(b.id);
-      btn.className = 'book-cover' + (done ? ' done' : '') + (!un ? ' locked' : '') + (un && !done ? ' next' : '');
-      btn.innerHTML = '<span class="bc-pic">' + (un ? b.pic : '\uD83D\uDD12') + '</span><span class="bc-title">' + b.title + '</span><span class="bc-sub">' + (done ? '\u2B50 You read it!' : un ? 'Book ' + (i + 1) : 'Finish Book ' + i + ' first') + '</span>';
-      if (un) btn.onclick = () => this.openBook(i);
-      sh.appendChild(btn);
-    });
-  },
-  openBook(i) {
-    this.init(); this.bi = i; this.phase = 'warm'; this.blended = {}; this.curWord = 0; this.page = 0; this.miss = 0; this._tok++;
-    document.getElementById('bookTitle').textContent = '\uD83D\uDCD6 ' + this.book().title;
-    this.renderStage();
-    show('book');
-  },
-  renderStage() {
-    const st = document.getElementById('bookStage');
-    if (this.phase === 'warm') st.innerHTML = this.warmHTML();
-    else if (this.phase === 'story') st.innerHTML = this.storyHTML();
-    else st.innerHTML = this.checkHTML();
-  },
-  warmHTML() {
-    const b = this.book(); const cur = b.words[this.curWord];
-    const chips = b.words.map((wd, i) => '<button class="rd-chip' + (this.blended[wd.w] ? ' done' : '') + '" onclick="Read.pickWord(' + i + ')">' + (this.blended[wd.w] ? '\u2713 ' : '') + wd.w + '</button>').join('');
-    const letters = cur.w.split('').map((ch, i) => '<button class="rd-letter" id="rdL' + i + '" onclick="Read.letterSound(' + i + ')">' + ch + '</button>').join('');
-    const all = b.words.every(wd => this.blended[wd.w]);
-    return '<div class="sub">Words in this book \u2014 tap the letters, then blend it!</div><div class="rd-word-chips">' + chips + '</div>'
-      + '<div class="rd-card"><div class="rd-letters">' + letters + '</div>'
-      + '<div class="rd-pic" id="rdPic" style="visibility:hidden">' + cur.pic + '</div>'
-      + '<button class="btn big" onclick="Read.blend()">\uD83D\uDD0A Blend it!</button> '
-      + '<button class="btn big alt" onclick="Read.sayWord()">\uD83D\uDDE3\uFE0F Say it</button></div>'
-      + (all ? '<button class="btn big" style="margin-top:12px" onclick="Read.startStory()">\uD83D\uDCD6 Read the story!</button>' : '');
-  },
-  pickWord(i) { this.curWord = i; this.renderStage(); },
-  letterSound(i) {
-    const w = this.book().words[this.curWord].w;
-    const el = document.getElementById('rdL' + i); if (el) el.classList.add('lit');
-    this._one('ph_' + w[i].toLowerCase());
-  },
-  _one(key) {
-    const uri = GAME_AUDIO[key]; if (!uri) return;
-    try { const p = new Audio(blobURLFor(uri)).play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
-  },
-  _chain(keys, after) {
-    const tok = ++this._tok; let i = 0;
-    const step = () => {
-      if (tok !== this._tok) return;
-      if (i >= keys.length) { if (after) after(); return; }
-      const key = keys[i++]; const uri = GAME_AUDIO[key];
-      if (!uri) { setTimeout(step, 350); return; }
-      let adv = false; const go = () => { if (!adv) { adv = true; step(); } };
-      try { const a = new Audio(blobURLFor(uri)); a.onended = go; setTimeout(go, 1100); const p = a.play(); if (p && p.catch) p.catch(go); }
-      catch (e) { go(); }
-    };
-    step();
-  },
-  blend() {
-    const wd = this.book().words[this.curWord];
-    const keys = wd.w.toLowerCase().split('').map(ch => 'phb_' + ch);
-    this._chain(keys, () => {
-      wd.w.split('').forEach((ch, i) => { const el = document.getElementById('rdL' + i); if (el) el.classList.add('lit'); });
-      this._one(this.book().wordClips[wd.w.toLowerCase()]);
-      const pic = document.getElementById('rdPic'); if (pic) pic.style.visibility = 'visible';
-      if (!this.blended[wd.w]) {
-        this.blended[wd.w] = true;
-        const isNew = !Stats.get('words', wd.w.toLowerCase());
-        Stats.record('words', wd.w.toLowerCase(), true);
-        if (isNew) this.stars(1);
-        setTimeout(() => this.renderStage(), 900);
-      }
-    });
-  },
-  sayWord() {
-    const wd = this.book().words[this.curWord];
-    this._one(this.book().wordClips[wd.w.toLowerCase()]);
-    const pic = document.getElementById('rdPic'); if (pic) pic.style.visibility = 'visible';
-    if (!this.blended[wd.w]) { this.blended[wd.w] = true; Stats.record('words', wd.w.toLowerCase(), true); setTimeout(() => this.renderStage(), 600); }
-  },
-  startStory() { this.phase = 'story'; this.page = 0; this._tok++; this.renderStage(); },
-  storyHTML() {
-    const b = this.book(); const pg = b.pages[this.page];
-    const words = pg.text.split(' ').map(w => '<span class="w" onclick="Read.sayStoryWord(this, \'' + w.replace(/[^A-Za-z]/g, '').toLowerCase() + '\')">' + w + '</span>').join(' ');
-    const dots = b.pages.map((p, i) => i === this.page ? '\u26AB' : '\u26AA').join(' ');
-    return '<div class="rd-card"><div class="rd-pic">' + pg.pic + '</div><div class="rd-sent">' + words + '</div>'
-      + '<button class="btn big" onclick="Read.saySentence()">\uD83D\uDD0A Hear it</button>'
-      + '<div class="rd-nav"><button class="rd-arrow" ' + (this.page === 0 ? 'disabled' : '') + ' onclick="Read.turn(-1)">\u2B05\uFE0F</button><span>' + dots + '</span><button class="rd-arrow" onclick="Read.turn(1)">' + (this.page === b.pages.length - 1 ? '\u2753' : '\u27A1\uFE0F') + '</button></div></div>';
-  },
-  saySentence() { this._one(this.book().pages[this.page].clip); },
-  sayStoryWord(el, w) {
-    document.querySelectorAll('.rd-sent .w').forEach(x => x.classList.remove('lit'));
-    if (el) el.classList.add('lit');
-    const key = this.book().wordClips[w]; if (key) this._one(key);
-  },
-  turn(d) {
-    const last = this.book().pages.length - 1;
-    if (d > 0 && this.page === last) { this.phase = 'check'; this.miss = 0; this._tok++; this.renderStage(); return; }
-    this.page = Math.max(0, Math.min(last, this.page + d)); this.renderStage();
-  },
-  checkHTML() {
-    const c = this.book().check;
-    const opts = c.opts.map((o, i) => '<button class="rd-opt' + (this.miss >= 2 && o.ok ? ' wiggle' : '') + '" id="rdOpt' + i + '" onclick="Read.answer(' + i + ')">' + o.pic + '</button>').join('');
-    return '<div class="rd-card"><h3 style="margin:4px 0">' + c.q + '</h3><button class="btn big" onclick="Read._one(\'' + c.clip + '\')">\uD83D\uDD0A Hear the question</button><div class="rd-opts" style="margin-top:14px">' + opts + '</div><div class="sub" id="rdMsg"></div></div>';
-  },
-  answer(i) {
-    const c = this.book().check; const o = c.opts[i];
-    const el = document.getElementById('rdOpt' + i);
-    if (o.ok) {
-      if (el) el.classList.add('correct');
-      this.finish();
-    } else {
-      if (el) el.classList.add('wrong');
-      this.miss++;
-      Stats.record('words', 'check_' + this.book().id, false);
-      const msg = document.getElementById('rdMsg'); if (msg) msg.textContent = 'Try again!';
-      if (this.miss >= 2) this.renderStage();
-    }
-  },
-  finish() {
-    const b = this.book(); const first = !this.isDone(b.id);
-    if (first) { this.data.done.push(b.id); this.save(); this.stars(1); Stats.record('words', 'check_' + b.id, true); }
-    this._one('rd_great');
-    const name = (typeof Profile !== 'undefined' && Profile.data && Profile.data.name) || 'Brantley';
-    let extra = 'You finished "' + b.title + '"!';
-    if (typeof pendingStickers !== 'undefined' && pendingStickers.length) { extra += '<br>\uD83C\uDF89 Plus a new sticker for your sticker book!'; pendingStickers.splice(0); }
-    document.getElementById('readTitle').textContent = '\uD83C\uDF89 You read a whole book, ' + name + '!';
-    document.getElementById('readBody').innerHTML = extra;
-    document.getElementById('readModal').style.display = 'flex';
-    if (typeof confettiBurst === 'function') confettiBurst();
-  }
-};
 
 /* --- playground art (illustrated pieces, characters, scene) --- */
 
@@ -2417,8 +2199,6 @@ function renderProgress() {
   h += skillRow('\uD83D\uDD24 Letters', 'letters', LETTERS.map(x => x.l), id => id);
   h += skillRow('\uD83D\uDD17 Match Pairs', 'match', LETTERS.map(x => x.l), id => id.toLowerCase());
   h += skillRow('\uD83D\uDD22 Numbers', 'numbers', Array.from({ length: 20 }, (_, i) => i + 1), id => id);
-  h += '<div class="prog-card"><div class="prog-title">\uD83D\uDCD6 Books read \u2014 ' + ((typeof Read !== 'undefined') ? Read.peekDone() : 0) + ' of ' + ((typeof BOOKS !== 'undefined') ? BOOKS.length : 0) + '</div></div>';
-  h += skillRow('\uD83D\uDCD6 Words', 'words', BOOKS.flatMap(b => b.words.map(w => w.w.toLowerCase())), id => id);
   h += skillRow('\uD83D\uDD37 Shapes', 'shapes', SHAPES.map(s => s.id), id => SHAPES.find(s => s.id === id).name);
   h += skillRow('\uD83C\uDF08 Colors', 'colors', COLOR_LIST.map(c => c.id), id => COLOR_LIST.find(c => c.id === id).name);
   h += '<div class="prog-card"><div class="prog-title">Letter mastery</div><div class="prog-tiles">' + LETTERS.map(x => {
@@ -2822,8 +2602,6 @@ function show(id) {
     if (id === "playground") Rewards.renderPlayground();
     if (id === "stickers") Rewards.renderStickers();
     if (id === "progress" && typeof renderProgress === "function") renderProgress();
-    if (id === "read" && typeof Read !== "undefined") Read.renderShelf();
-    if (id !== "book" && typeof Read !== "undefined") Read.stop();
     if (id === "setup" && typeof populateSetup === "function") populateSetup();
     if (id === "learn" && typeof renderGrid === "function") renderGrid();
     if (id === "learnNumbers" && typeof renderNumbers === "function") renderNumbers();
