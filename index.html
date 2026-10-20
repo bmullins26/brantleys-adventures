@@ -305,6 +305,25 @@
     font-weight: 800; text-align: center; padding: 16px; }
   #mergeFinal { font-size: 1.7rem; }
   #mergeMsg { margin-top: 6px; font-size: 1.05rem; }
+
+  /* --- Snake --- */
+  #snakeWrap { position: relative; max-width: 360px; margin: 0 auto; }
+  #snakeCanvas { width: 100%; height: auto; display: block; border-radius: 18px; background: #7ec850;
+    touch-action: none; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+  #snakeOver { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; background: rgba(20,24,40,.45); border-radius: 18px; color: #fff;
+    font-weight: 800; text-align: center; padding: 16px; }
+  #snakeFinal { font-size: 1.7rem; }
+  #snakeMsg { margin-top: 6px; font-size: 1.05rem; }
+  .dpad { display: grid; grid-template-columns: repeat(3, 64px); grid-template-rows: repeat(2, 56px);
+    gap: 6px; justify-content: center; margin: 12px auto 0; }
+  .dpad button { font-size: 1.4rem; border: none; border-radius: 14px; background: #fff;
+    box-shadow: 0 3px 0 rgba(0,0,0,.18); cursor: pointer; }
+  .dpad button:active { transform: translateY(2px); box-shadow: none; }
+  /* --- YouTube card (grown-ups) --- */
+  .yt-btn { display: block; text-align: center; text-decoration: none; background: #ff0033; color: #fff;
+    max-width: 280px; margin: 10px auto 0; }
+  .yt-watch { display: block; text-align: center; text-decoration: none; max-width: 280px; margin: 10px auto 0; }
 </style>
 </head>
 <body>
@@ -328,7 +347,7 @@
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
   <div style="text-align:center"><button class="grownups-link" onclick="show('grownups')">👤 Grown-ups</button></div>
-  <div class="ver">v2.6</div>
+  <div class="ver">v2.7</div>
 </div>
 
 <!-- REWARDS -->
@@ -361,6 +380,12 @@
   <div class="pf-card" style="text-align:center">
     <p class="pf-label" style="text-align:center">Press and hold the button to continue</p>
     <button class="opt-btn" id="gateBtn" style="font-size:1.15rem;padding:18px 24px"><span id="gateFill"></span><span style="position:relative">✋ Hold for Grown-ups</span></button>
+  </div>
+  <div class="pf-card" style="text-align:center">
+    <div class="pf-label" style="text-align:center;font-size:1.1rem">📺 Adventures With Brantley</div>
+    <p class="subtitle" style="margin:6px 0 2px">Sing-along songs and adventures on YouTube, starring the same characters.</p>
+    <a class="save-btn yt-btn" href="https://www.youtube.com/@BrantleysAdventures5?sub_confirmation=1" target="_blank" rel="noopener">▶️ Subscribe on YouTube</a>
+    <a class="back-btn yt-watch" href="https://www.youtube.com/@BrantleysAdventures5" target="_blank" rel="noopener">🎬 Watch the channel</a>
   </div>
 </div>
 
@@ -426,6 +451,7 @@
     <button class="home-card tint-yellow wide" onclick="show('tttMenu')"><span class="hc-icon">⭕</span><span class="hc-title">Tic Tac Toe</span><span class="hc-sub">X's and O's!</span></button>
     <button class="home-card tint-pink wide" onclick="show('racer')"><span class="hc-icon">🏎️</span><span class="hc-title">RC Racer</span><span class="hc-sub">Dodge the cars!</span></button>
     <button class="home-card tint-purple wide" onclick="show('merge')"><span class="hc-icon">🍉</span><span class="hc-title">Fruit Merge</span><span class="hc-sub">Drop &amp; grow fruit!</span></button>
+    <button class="home-card tint-green wide" onclick="show('snake')"><span class="hc-icon">🐍</span><span class="hc-title">Snake</span><span class="hc-sub">Eat the apples!</span></button>
   </div>
 </div>
 
@@ -482,6 +508,26 @@
     </div>
   </div>
   <p class="subtitle">🍒 → 🍓 → 🍇 → 🍊 → 🍎 → 🍐 → 🍍 → 🍈 → 🍉</p>
+</div>
+
+
+<div id="snake" class="screen">
+  <button class="back-btn" onclick="show('games')">⬅ Games</button>
+  <h1>🐍 Snake</h1>
+  <div class="racer-hud"><span id="snakeScore">Score: 0</span><span id="snakeLen">Length: 4</span><span id="snakeBest">Best: 0</span></div>
+  <div id="snakeWrap">
+    <canvas id="snakeCanvas" width="340" height="420"></canvas>
+    <div id="snakeOver">
+      <div id="snakeFinal">🐍 Snake</div>
+      <div id="snakeMsg">Eat the apples, grow longer. Don't bite yourself!</div>
+      <button class="save-btn" id="snakeGo" style="max-width:240px;margin:12px auto 0">▶️ Play!</button>
+    </div>
+  </div>
+  <div class="dpad">
+    <span></span><button onclick="Snake.setDir(0,-1)" aria-label="Up">⬆️</button><span></span>
+    <button onclick="Snake.setDir(-1,0)" aria-label="Left">⬅️</button><button onclick="Snake.setDir(0,1)" aria-label="Down">⬇️</button><button onclick="Snake.setDir(1,0)" aria-label="Right">➡️</button>
+  </div>
+  <p class="subtitle">Swipe the board or use the arrows!</p>
 </div>
 
 <div id="alpha" class="screen">
@@ -1229,6 +1275,213 @@ const Merge = {
     c.font = Math.round(r * 1.12) + 'px serif';
     c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText(this.EMOJI[tier], x, y + r * 0.06);
+  }
+};
+
+
+/* --- Snake: eat apples, grow longer --- */
+const Snake = {
+  cv: null, ctx: null, raf: 0, alive: false, playing: false, last: 0, acc: 0, ac: null,
+  COLS: 17, ROWS: 21, CELL: 20,
+  body: [], dir: { x: 1, y: 0 }, queue: [],
+  food: null, bonus: null, bonusT: 0, apples: 0, score: 0,
+  best: parseInt(localStorage.getItem('ba_snake_best') || '0', 10) || 0,
+  init() {
+    if (this.cv) { this.hud(); return; }
+    this.cv = document.getElementById('snakeCanvas');
+    if (!this.cv) return;
+    this.ctx = this.cv.getContext('2d');
+    let sx = 0, sy = 0, tracking = false;
+    this.cv.addEventListener('pointerdown', ev => { tracking = true; sx = ev.clientX; sy = ev.clientY; });
+    this.cv.addEventListener('pointermove', ev => {
+      if (!tracking) return;
+      const dx = ev.clientX - sx, dy = ev.clientY - sy;
+      if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return;
+      if (Math.abs(dx) > Math.abs(dy)) this.setDir(Math.sign(dx), 0);
+      else this.setDir(0, Math.sign(dy));
+      sx = ev.clientX; sy = ev.clientY;
+    });
+    const endSwipe = () => { tracking = false; };
+    this.cv.addEventListener('pointerup', endSwipe);
+    this.cv.addEventListener('pointercancel', endSwipe);
+    addEventListener('keydown', ev => {
+      if (!this.playing) return;
+      if (ev.key === 'ArrowUp') this.setDir(0, -1);
+      if (ev.key === 'ArrowDown') this.setDir(0, 1);
+      if (ev.key === 'ArrowLeft') this.setDir(-1, 0);
+      if (ev.key === 'ArrowRight') this.setDir(1, 0);
+    });
+    document.getElementById('snakeGo').addEventListener('click', () => this.start());
+    this.reset();
+    this.drawScene();
+    this.hud();
+  },
+  reset() {
+    this.body = [{ x: 8, y: 10 }, { x: 7, y: 10 }, { x: 6, y: 10 }, { x: 5, y: 10 }];
+    this.dir = { x: 1, y: 0 };
+    this.queue = [];
+    this.score = 0; this.apples = 0;
+    this.bonus = null; this.bonusT = 0;
+    this.spawnFood();
+  },
+  start() {
+    this.init();
+    this.reset();
+    document.getElementById('snakeOver').style.display = 'none';
+    this.playing = true;
+    this.hud();
+    this.run();
+  },
+  run() {
+    if (this.alive) return;
+    this.alive = true;
+    this.acc = 0;
+    this.last = performance.now();
+    this.raf = requestAnimationFrame(t => this.loop(t));
+  },
+  stop() { this.alive = false; cancelAnimationFrame(this.raf); },
+  setDir(x, y) {
+    const lastDir = this.queue.length ? this.queue[this.queue.length - 1] : this.dir;
+    if (lastDir.x === -x && lastDir.y === -y) return;  // no reversing
+    if (lastDir.x === x && lastDir.y === y) return;    // no duplicates
+    if (this.queue.length < 3) this.queue.push({ x: x, y: y });
+  },
+  spawnFood() {
+    const taken = new Set(this.body.map(s => s.x + ',' + s.y));
+    if (this.bonus) taken.add(this.bonus.x + ',' + this.bonus.y);
+    const free = [];
+    for (let x = 0; x < this.COLS; x++) for (let y = 0; y < this.ROWS; y++)
+      if (!taken.has(x + ',' + y)) free.push({ x: x, y: y });
+    this.food = free.length ? free[Math.floor(Math.random() * free.length)] : null;
+  },
+  tickMs() { return Math.max(70, 135 - Math.floor(this.score / 50) * 6); },
+  loop(t) {
+    if (!this.alive) return;
+    const dt = Math.min(0.25, (t - this.last) / 1000);
+    this.last = t;
+    if (this.playing) {
+      this.acc += dt * 1000;
+      if (this.bonus) {
+        this.bonusT -= dt;
+        if (this.bonusT <= 0) { this.bonus = null; }
+      }
+      while (this.acc >= this.tickMs() && this.playing) {
+        this.acc -= this.tickMs();
+        this.tick();
+      }
+    }
+    this.drawScene();
+    if (this.alive) this.raf = requestAnimationFrame(tt => this.loop(tt));
+  },
+  tick() {
+    if (this.queue.length) this.dir = this.queue.shift();
+    const head = { x: this.body[0].x + this.dir.x, y: this.body[0].y + this.dir.y };
+    if (head.x < 0 || head.y < 0 || head.x >= this.COLS || head.y >= this.ROWS) return this.over();
+    const eating = this.food && head.x === this.food.x && head.y === this.food.y;
+    const eatingBonus = this.bonus && head.x === this.bonus.x && head.y === this.bonus.y;
+    const limit = (eating || eatingBonus) ? this.body.length : this.body.length - 1;
+    for (let i = 0; i < limit; i++)
+      if (this.body[i].x === head.x && this.body[i].y === head.y) return this.over();
+    this.body.unshift(head);
+    if (eating) {
+      this.apples++;
+      this.score += 10;
+      this.pop(520 + (this.apples % 5) * 60);
+      this.spawnFood();
+      if (this.apples % 5 === 0 && !this.bonus) {
+        const taken = new Set(this.body.map(s => s.x + ',' + s.y));
+        if (this.food) taken.add(this.food.x + ',' + this.food.y);
+        const free = [];
+        for (let x = 0; x < this.COLS; x++) for (let y = 0; y < this.ROWS; y++)
+          if (!taken.has(x + ',' + y)) free.push({ x: x, y: y });
+        if (free.length) { this.bonus = free[Math.floor(Math.random() * free.length)]; this.bonusT = 6; }
+      }
+    } else if (eatingBonus) {
+      this.score += 30;
+      this.bonus = null;
+      this.pop(980);
+    } else {
+      this.body.pop();
+    }
+    this.hud();
+  },
+  pop(freq) {
+    try {
+      this.ac = this.ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = this.ac.createOscillator(), g = this.ac.createGain();
+      o.type = 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.06, this.ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, this.ac.currentTime + 0.12);
+      o.connect(g); g.connect(this.ac.destination);
+      o.start(); o.stop(this.ac.currentTime + 0.12);
+    } catch (e) {}
+  },
+  over() {
+    this.playing = false;
+    this.pop(180);
+    const isBest = this.score > this.best;
+    if (isBest) {
+      this.best = this.score;
+      try { localStorage.setItem('ba_snake_best', String(this.best)); } catch (e) {}
+    }
+    document.getElementById('snakeFinal').textContent = '🐍 Score: ' + this.score;
+    document.getElementById('snakeMsg').textContent = isBest && this.score > 0 ? '🏆 New best! Longest snake!' : 'Best: ' + this.best + ' — play again!';
+    document.getElementById('snakeGo').textContent = '🔁 Play Again!';
+    document.getElementById('snakeOver').style.display = 'flex';
+    this.hud();
+  },
+  hud() {
+    const s = document.getElementById('snakeScore'); if (s) s.textContent = 'Score: ' + this.score;
+    const l = document.getElementById('snakeLen'); if (l) l.textContent = 'Length: ' + this.body.length;
+    const b = document.getElementById('snakeBest'); if (b) b.textContent = 'Best: ' + this.best;
+  },
+  drawScene() {
+    const c = this.ctx;
+    if (!c) return;
+    const S = this.CELL;
+    for (let x = 0; x < this.COLS; x++) for (let y = 0; y < this.ROWS; y++) {
+      c.fillStyle = (x + y) % 2 ? '#7ec850' : '#74bd45';
+      c.fillRect(x * S, y * S, S, S);
+    }
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    if (this.food) {
+      c.font = '17px serif';
+      c.fillText('🍎', this.food.x * S + S / 2, this.food.y * S + S / 2 + 1);
+    }
+    if (this.bonus) {
+      c.font = (this.bonusT < 2 && Math.floor(this.bonusT * 5) % 2 ? '13px' : '17px') + ' serif';
+      c.fillText('⭐', this.bonus.x * S + S / 2, this.bonus.y * S + S / 2 + 1);
+    }
+    // body (tail to neck)
+    for (let i = this.body.length - 1; i >= 1; i--) {
+      const s = this.body[i];
+      c.fillStyle = i % 2 ? '#2f9e44' : '#37b24d';
+      c.beginPath();
+      const r = 6;
+      const px = s.x * S + 1.5, py = s.y * S + 1.5, w = S - 3;
+      c.moveTo(px + r, py);
+      c.arcTo(px + w, py, px + w, py + w, r);
+      c.arcTo(px + w, py + w, px, py + w, r);
+      c.arcTo(px, py + w, px, py, r);
+      c.arcTo(px, py, px + w, py, r);
+      c.fill();
+    }
+    // head
+    if (this.body.length) {
+      const hd = this.body[0];
+      c.fillStyle = '#2b8a3e';
+      c.beginPath(); c.arc(hd.x * S + S / 2, hd.y * S + S / 2, S / 2 - 1, 0, 7); c.fill();
+      const ex = this.dir.x, ey = this.dir.y;
+      const px2 = -ey, py2 = ex;
+      for (const side of [-1, 1]) {
+        const cx = hd.x * S + S / 2 + ex * 3 + px2 * side * 4.5;
+        const cy = hd.y * S + S / 2 + ey * 3 + py2 * side * 4.5;
+        c.fillStyle = '#fff';
+        c.beginPath(); c.arc(cx, cy, 3.4, 0, 7); c.fill();
+        c.fillStyle = '#1a1a2e';
+        c.beginPath(); c.arc(cx + ex * 1.4, cy + ey * 1.4, 1.8, 0, 7); c.fill();
+      }
+    }
   }
 };
 
@@ -2002,6 +2255,10 @@ function show(id) {
   if (typeof Merge !== "undefined") {
     if (id === "merge") Merge.init();
     else Merge.stop();
+  }
+  if (typeof Snake !== "undefined") {
+    if (id === "snake") Snake.init();
+    else Snake.stop();
   }
 }
 
