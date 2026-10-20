@@ -283,6 +283,18 @@
   .char-tile { border: 3px solid rgba(0,0,0,.12); background: #fff; border-radius: 16px; padding: 4px; cursor: pointer; }
   .char-tile.sel { border-color: #3a2b00; background: #fff3bf; }
   .char-tile img { width: 56px; height: 56px; object-fit: cover; border-radius: 12px; display: block; }
+
+  /* --- RC Racer --- */
+  .racer-hud { display: flex; justify-content: space-between; max-width: 380px; margin: 0 auto 8px;
+    font-weight: 800; color: #3a2b00; padding: 0 6px; font-size: 1.05rem; }
+  #racerWrap { position: relative; max-width: 380px; margin: 0 auto; }
+  #racerCanvas { width: 100%; height: auto; display: block; border-radius: 18px; background: #58a34c;
+    touch-action: none; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+  #racerOver { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; background: rgba(20,24,40,.45); border-radius: 18px; color: #fff;
+    font-weight: 800; text-align: center; padding: 16px; }
+  #racerFinal { font-size: 1.7rem; }
+  #racerMsg { margin-top: 6px; font-size: 1.05rem; }
 </style>
 </head>
 <body>
@@ -306,7 +318,7 @@
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
   <div style="text-align:center"><button class="grownups-link" onclick="show('grownups')">👤 Grown-ups</button></div>
-  <div class="ver">v2.4</div>
+  <div class="ver">v2.5</div>
 </div>
 
 <!-- REWARDS -->
@@ -404,6 +416,7 @@
     <button class="home-card tint-yellow" onclick="TicTacToe.start('solo')"><span class="hc-icon">🧒</span><span class="hc-title">Solo</span><span class="hc-sub">Practice board</span></button>
     <button class="home-card tint-blue" onclick="TicTacToe.start('bot')"><span class="hc-icon">🤖</span><span class="hc-title">Vs Bot</span><span class="hc-sub">Beat the computer</span></button>
     <button class="home-card tint-green wide" onclick="TicTacToe.start('friend')"><span class="hc-icon">👥</span><span class="hc-title">2 Players</span><span class="hc-sub">Play with a friend</span></button>
+    <button class="home-card tint-pink wide" onclick="show('racer')"><span class="hc-icon">🏎️</span><span class="hc-title">RC Racer</span><span class="hc-sub">Dodge the cars!</span></button>
   </div>
 </div>
 
@@ -418,6 +431,22 @@
 </div>
 
 <!-- ALPHABET -->
+
+<div id="racer" class="screen">
+  <button class="back-btn" onclick="show('games')">⬅ Games</button>
+  <h1>🏎️ RC Racer</h1>
+  <div class="racer-hud"><span id="racerScore">Score: 0</span><span id="racerStars">⭐ 0</span><span id="racerBest">Best: 0</span></div>
+  <div id="racerWrap">
+    <canvas id="racerCanvas" width="360" height="540"></canvas>
+    <div id="racerOver">
+      <div id="racerFinal">🏎️ RC Racer</div>
+      <div id="racerMsg">Dodge the cars, grab the stars!</div>
+      <button class="save-btn" id="racerGo" style="max-width:240px;margin:12px auto 0">▶️ Race!</button>
+    </div>
+  </div>
+  <p class="subtitle">Drag to steer!</p>
+</div>
+
 <div id="alpha" class="screen">
   <button class="back-btn" onclick="show('home')">⬅ Home</button>
   <h1>🔤 Alphabet</h1>
@@ -683,6 +712,230 @@ const TicTacToe = {
     if (r.winner === 'tie') this.status("It's a tie! \uD83E\uDD1D");
     else if (this.mode === 'bot') this.status(r.winner === 'X' ? '\uD83C\uDF89 You win!' : '\uD83E\uDD16 Bot wins! Try again!');
     else this.status('\uD83C\uDF89 ' + r.winner + ' wins!');
+  }
+};
+
+
+/* --- RC Racer: endless traffic dodger (drag to steer) --- */
+const Racer = {
+  cv: null, ctx: null, raf: 0, running: false, last: 0, ac: null,
+  W: 360, H: 540, roadL: 34, roadR: 326, carW: 44, carH: 74,
+  px: 180, targetX: 180, py: 452,
+  speed: 0, baseSpeed: 175, dist: 0, score: 0, starCount: 0, bonus: 0,
+  traffic: [], stars: [], texts: [], spawnT: 0, starT: 0, elapsed: 0,
+  best: parseInt(localStorage.getItem('ba_racer_best') || '0', 10) || 0,
+  colors: ['#4dabf7', '#ffd43b', '#b197fc', '#ffa94d', '#69db7c', '#f783ac', '#3bc9db'],
+  init() {
+    if (this.cv) { this.hud(); return; }
+    this.cv = document.getElementById('racerCanvas');
+    if (!this.cv) return;
+    this.ctx = this.cv.getContext('2d');
+    const setX = ev => {
+      const r = this.cv.getBoundingClientRect();
+      this.targetX = (ev.clientX - r.left) / r.width * this.W;
+    };
+    this.cv.addEventListener('pointerdown', ev => { ev.preventDefault(); setX(ev); });
+    this.cv.addEventListener('pointermove', ev => { if (ev.buttons || ev.pointerType === 'touch') setX(ev); });
+    addEventListener('keydown', ev => {
+      if (!this.running) return;
+      if (ev.key === 'ArrowLeft') this.targetX -= 30;
+      if (ev.key === 'ArrowRight') this.targetX += 30;
+    });
+    document.getElementById('racerGo').addEventListener('click', () => this.start());
+    this.drawScene();
+    this.hud();
+  },
+  start() {
+    this.init();
+    this.traffic = []; this.stars = []; this.texts = [];
+    this.score = 0; this.starCount = 0; this.bonus = 0; this.dist = 0; this.elapsed = 0;
+    this.speed = this.baseSpeed; this.spawnT = 0.7; this.starT = 1.8;
+    this.px = 180; this.targetX = 180;
+    document.getElementById('racerOver').style.display = 'none';
+    this.running = true;
+    this.last = performance.now();
+    cancelAnimationFrame(this.raf);
+    this.raf = requestAnimationFrame(t => this.loop(t));
+    this.hud();
+  },
+  stop() { this.running = false; cancelAnimationFrame(this.raf); },
+  over() {
+    this.stop();
+    this.crashSound();
+    const isBest = this.score > this.best;
+    if (isBest) {
+      this.best = this.score;
+      try { localStorage.setItem('ba_racer_best', String(this.best)); } catch (e) {}
+    }
+    document.getElementById('racerFinal').textContent = '💥 Score: ' + this.score;
+    document.getElementById('racerMsg').textContent = isBest && this.score > 0 ? '🏆 New best! Great driving!' : 'Best: ' + this.best + ' — race again!';
+    document.getElementById('racerGo').textContent = '🔁 Race Again!';
+    document.getElementById('racerOver').style.display = 'flex';
+    this.hud();
+  },
+  hud() {
+    const s = document.getElementById('racerScore'); if (s) s.textContent = 'Score: ' + this.score;
+    const st = document.getElementById('racerStars'); if (st) st.textContent = '⭐ ' + this.starCount;
+    const b = document.getElementById('racerBest'); if (b) b.textContent = 'Best: ' + this.best;
+  },
+  beep(freq, dur, type, vol) {
+    try {
+      this.ac = this.ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = this.ac.createOscillator(), g = this.ac.createGain();
+      o.type = type || 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol || 0.07, this.ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, this.ac.currentTime + dur);
+      o.connect(g); g.connect(this.ac.destination);
+      o.start(); o.stop(this.ac.currentTime + dur);
+    } catch (e) {}
+  },
+  ding() { this.beep(880, 0.14, 'sine', 0.06); setTimeout(() => this.beep(1318, 0.16, 'sine', 0.05), 55); },
+  crashSound() { this.beep(130, 0.35, 'sawtooth', 0.08); },
+  loop(t) {
+    if (!this.running) return;
+    const dt = Math.min(0.05, (t - this.last) / 1000);
+    this.last = t;
+    this.step(dt);
+    this.drawScene();
+    if (this.running) this.raf = requestAnimationFrame(tt => this.loop(tt));
+  },
+  step(dt) {
+    this.elapsed += dt;
+    this.speed = Math.min(430, this.baseSpeed + this.elapsed * 7);
+    this.dist += this.speed * dt;
+    // steering: car glides toward the finger
+    const half = this.carW / 2;
+    this.targetX = Math.max(this.roadL + half, Math.min(this.roadR - half, this.targetX));
+    this.px += (this.targetX - this.px) * Math.min(1, dt * 11);
+    // spawn traffic
+    this.spawnT -= dt;
+    if (this.spawnT <= 0) {
+      const x = this.roadL + half + Math.random() * (this.roadR - this.roadL - this.carW);
+      const blocked = this.traffic.some(c => c.y < 96 && Math.abs(c.x - x) < 58);
+      if (!blocked) this.traffic.push({ x: x, y: -this.carH, v: 55 + Math.random() * 65, color: this.colors[Math.floor(Math.random() * this.colors.length)], counted: false });
+      this.spawnT = Math.max(0.42, 0.95 - this.elapsed * 0.006) + Math.random() * 0.35;
+    }
+    // spawn stars
+    this.starT -= dt;
+    if (this.starT <= 0) {
+      this.stars.push({ x: this.roadL + 24 + Math.random() * (this.roadR - this.roadL - 48), y: -20 });
+      this.starT = 2.1 + Math.random() * 1.8;
+    }
+    // move traffic
+    for (const c of this.traffic) {
+      c.y += (this.speed - c.v) * dt;
+      if (!c.counted && c.y - this.carH / 2 > this.py + this.carH / 2) {
+        c.counted = true;
+        if (Math.abs(c.x - this.px) < this.carW * 1.5) {
+          this.bonus += 10;
+          this.texts.push({ x: this.px, y: this.py - 58, s: 'Close! +10', t: 0 });
+          this.beep(660, 0.09, 'sine', 0.05);
+        }
+      }
+    }
+    this.traffic = this.traffic.filter(c => c.y - this.carH / 2 < this.H + 10);
+    // move + collect stars
+    for (const s of this.stars) {
+      s.y += this.speed * dt;
+      if (!s.got && Math.abs(s.x - this.px) < 46 && Math.abs(s.y - this.py) < 52) {
+        s.got = true;
+        this.starCount++;
+        this.texts.push({ x: s.x, y: s.y - 18, s: '+25', t: 0 });
+        this.ding();
+      }
+    }
+    this.stars = this.stars.filter(s => !s.got && s.y < this.H + 24);
+    // floating texts
+    for (const t of this.texts) { t.t += dt; t.y -= 30 * dt; }
+    this.texts = this.texts.filter(t => t.t < 0.9);
+    // score + collision (forgiving boxes: 72% wide, 78% tall)
+    this.score = Math.floor(this.dist / 12) + this.starCount * 25 + this.bonus;
+    const pw = this.carW * 0.72, ph = this.carH * 0.78;
+    for (const c of this.traffic) {
+      if (Math.abs(c.x - this.px) < (pw + this.carW * 0.72) / 2 && Math.abs(c.y - this.py) < (ph + this.carH * 0.78) / 2) {
+        this.drawScene();
+        this.over();
+        return;
+      }
+    }
+    this.hud();
+  },
+  rr(x, y, w, h, r) {
+    const c = this.ctx;
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r);
+    c.arcTo(x, y, x + w, y, r);
+    c.closePath();
+  },
+  drawCar(x, y, color, isPlayer) {
+    const c = this.ctx, w = this.carW, h = this.carH;
+    // wheels
+    c.fillStyle = '#22242a';
+    c.fillRect(x - w / 2 - 3, y - h * 0.32, 7, 16);
+    c.fillRect(x + w / 2 - 4, y - h * 0.32, 7, 16);
+    c.fillRect(x - w / 2 - 3, y + h * 0.14, 7, 16);
+    c.fillRect(x + w / 2 - 4, y + h * 0.14, 7, 16);
+    // body
+    this.rr(x - w / 2, y - h / 2, w, h, 11);
+    c.fillStyle = color; c.fill();
+    c.lineWidth = 2.5; c.strokeStyle = 'rgba(0,0,0,.55)'; c.stroke();
+    // windshield + cabin
+    this.rr(x - w * 0.34, y - h * 0.30, w * 0.68, h * 0.24, 6);
+    c.fillStyle = '#bfe8ff'; c.fill();
+    this.rr(x - w * 0.34, y + h * 0.06, w * 0.68, h * 0.20, 6);
+    c.fillStyle = 'rgba(0,0,0,.18)'; c.fill();
+    // headlights
+    c.fillStyle = '#fff6bf';
+    c.beginPath(); c.arc(x - w * 0.30, y - h / 2 + 6, 4, 0, 7); c.fill();
+    c.beginPath(); c.arc(x + w * 0.30, y - h / 2 + 6, 4, 0, 7); c.fill();
+    if (isPlayer) {
+      // antenna + star badge
+      c.strokeStyle = '#22242a'; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(x + w * 0.30, y + h * 0.30); c.lineTo(x + w * 0.44, y + h * 0.52); c.stroke();
+      c.fillStyle = '#ffd43b';
+      c.beginPath(); c.arc(x + w * 0.44, y + h * 0.52, 4, 0, 7); c.fill();
+      c.font = '15px serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('⭐', x, y - h * 0.02);
+    }
+  },
+  drawScene() {
+    const c = this.ctx;
+    if (!c) return;
+    // grass
+    c.fillStyle = '#58a34c';
+    c.fillRect(0, 0, this.W, this.H);
+    c.fillStyle = '#4c9440';
+    const off = this.dist % 54;
+    for (let y = -54 + off; y < this.H; y += 54) { c.fillRect(0, y, this.roadL, 26); c.fillRect(this.roadR, y, this.W - this.roadR, 26); }
+    // road
+    c.fillStyle = '#4a4f57';
+    c.fillRect(this.roadL, 0, this.roadR - this.roadL, this.H);
+    c.fillStyle = '#f8f9fa';
+    c.fillRect(this.roadL - 3, 0, 5, this.H);
+    c.fillRect(this.roadR - 2, 0, 5, this.H);
+    // lane dashes
+    c.fillStyle = '#ffe066';
+    const laneW = (this.roadR - this.roadL) / 3;
+    for (const lx of [this.roadL + laneW, this.roadL + laneW * 2]) {
+      for (let y = -60 + (this.dist % 60); y < this.H; y += 60) c.fillRect(lx - 2.5, y, 5, 34);
+    }
+    // stars
+    c.font = '26px serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    for (const s of this.stars) c.fillText('⭐', s.x, s.y);
+    // traffic + player
+    for (const t of this.traffic) this.drawCar(t.x, t.y, t.color, false);
+    this.drawCar(this.px, this.py, '#e03131', true);
+    // floating texts
+    c.font = '800 17px "Baloo 2", sans-serif';
+    for (const t of this.texts) {
+      c.globalAlpha = Math.max(0, 1 - t.t / 0.9);
+      c.fillStyle = '#fff';
+      c.fillText(t.s, t.x, t.y);
+      c.globalAlpha = 1;
+    }
   }
 };
 
@@ -1448,6 +1701,10 @@ function show(id) {
     if (id === "setup" && typeof populateSetup === "function") populateSetup();
     if (id === "learn" && typeof renderGrid === "function") renderGrid();
     if (id === "learnNumbers" && typeof renderNumbers === "function") renderNumbers();
+  }
+  if (typeof Racer !== "undefined") {
+    if (id === "racer") Racer.init();
+    else Racer.stop();
   }
 }
 
