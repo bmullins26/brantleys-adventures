@@ -168,8 +168,17 @@
   .ttt-controls { display: flex; gap: 12px; justify-content: center; margin: 8px 0 4px; }
 
   /* --- rewards --- */
-  .pg-scene { border-radius: 26px; overflow: hidden; margin: 12px 0;
-    background: linear-gradient(#bfe9ff 0 38%, #9ede7a 38% 100%); padding: 18px 12px 14px; }
+  .pg-scene { border-radius: 26px; overflow: hidden; margin: 12px 0; position: relative;
+    height: 340px; background: linear-gradient(#bfe9ff 0 24%, #9ede7a 24% 100%); }
+  .pg-piece { position: absolute; width: 23%; text-align: center; font-weight: 800;
+    color: #3a2b00; font-size: .78rem; cursor: grab; touch-action: none;
+    user-select: none; -webkit-user-select: none;
+    background: rgba(255,255,255,.88); border-radius: 16px; padding: 6px 2px 4px; }
+  .pg-piece .pg-e { font-size: 2.3rem; display: block; line-height: 1.15; }
+  .pg-piece.dragging { transform: scale(1.12); box-shadow: 0 8px 18px rgba(0,0,0,.25); cursor: grabbing; }
+  .pg-hint { position: absolute; top: 45%; left: 0; right: 0; text-align: center;
+    font-weight: 800; color: #2f5d1f; font-size: 1.05rem; padding: 0 20px; }
+  .pg-locked-title { font-weight: 800; color: #3a2b00; margin: 14px 0 8px; font-size: 1.05rem; }
   .pg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .pg-tile { background: rgba(255,255,255,.92); border-radius: 18px; padding: 10px 4px 8px;
     text-align: center; font-weight: 800; color: #3a2b00; font-size: .82rem; position: relative; }
@@ -177,7 +186,8 @@
   .pg-tile.locked { background: rgba(255,255,255,.45); border: 2px dashed rgba(0,0,0,.25); }
   .pg-tile.locked .pg-e { filter: grayscale(1); opacity: .45; }
   .pg-tile .pg-lock { position: absolute; top: 4px; right: 8px; font-size: 1rem; }
-  .pg-kids { text-align: center; font-size: 2rem; margin-top: 10px; }
+  .pg-kids { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+    font-size: 1.9rem; pointer-events: none; }
   .sticker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0; }
   .sticker-tile { background: #fff; border-radius: 18px; aspect-ratio: 1/1; display: flex;
     align-items: center; justify-content: center; font-size: 2.2rem; position: relative;
@@ -208,7 +218,7 @@
     <button class="home-card tint-purple wide" onclick="show('games')"><span class="hc-icon">🎮</span><span class="hc-title">Games</span><span class="hc-sub">Tic tac toe &amp; more</span></button>
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
-  <div class="ver">v27</div>
+  <div class="ver">v28</div>
 </div>
 
 <!-- REWARDS -->
@@ -227,11 +237,12 @@
   <button class="back-btn" onclick="show('rewards')">⬅ Rewards</button>
   <h1>🏗️ My Playground</h1>
   <p class="reward-count" id="pgCount2">0 of 12 pieces</p>
-  <div class="pg-scene">
-    <div class="pg-grid" id="pgGrid"></div>
+  <div class="pg-scene" id="pgScene">
     <div class="pg-kids">👦👧🧒</div>
   </div>
-  <p class="subtitle">Finish quizzes to unlock more pieces!</p>
+  <p class="subtitle">Drag your pieces to build your playground!</p>
+  <div class="pg-locked-title">Still to earn 🔒</div>
+  <div class="pg-grid" id="pgLocked"></div>
 </div>
 
 <div id="stickers" class="screen">
@@ -512,12 +523,18 @@ const Rewards = {
       { e: '\uD83C\uDF38', n: 'Flower Garden' }, { e: '\uD83E\uDDFA', n: 'Picnic Table' }
     ]
   },
+  DEFAULT_POS: [
+    { x: 3, y: 30 }, { x: 27, y: 27 }, { x: 51, y: 30 }, { x: 74, y: 27 },
+    { x: 8, y: 52 }, { x: 33, y: 54 }, { x: 56, y: 52 }, { x: 75, y: 54 },
+    { x: 4, y: 5 }, { x: 28, y: 3 }, { x: 52, y: 5 }, { x: 72, y: 3 }
+  ],
   data: null,
   load() {
     try { this.data = JSON.parse(localStorage.getItem(this.KEY)); } catch (e) { this.data = null; }
     if (!this.data || typeof this.data.stars !== 'number') {
-      this.data = { stars: 0, stickers: [], pieces: { quizTime: [], matchPairs: [], numberQuiz: [] }, lastPieceDate: {} };
+      this.data = { stars: 0, stickers: [], pieces: { quizTime: [], matchPairs: [], numberQuiz: [] }, lastPieceDate: {}, layout: {} };
     }
+    if (!this.data.layout) this.data.layout = {};
   },
   save() { try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) {} },
   today() { return new Date().toISOString().slice(0, 10); },
@@ -561,19 +578,49 @@ const Rewards = {
     if (sc2) sc2.textContent = this.data.stickers.length + ' of 20 collected';
   },
   renderPlayground() {
-    const g = document.getElementById('pgGrid');
-    if (!g) return;
-    g.innerHTML = '';
-    ['quizTime', 'matchPairs', 'numberQuiz'].forEach(qid => {
+    const scene = document.getElementById('pgScene');
+    if (!scene) return;
+    scene.querySelectorAll('.pg-piece, .pg-hint').forEach(e => e.remove());
+    const order = ['quizTime', 'matchPairs', 'numberQuiz'];
+    let g = 0;
+    order.forEach(qid => {
       this.PIECES[qid].forEach((p, i) => {
-        const owned = this.data.pieces[qid].indexOf(i) >= 0;
-        const d = document.createElement('div');
-        d.className = 'pg-tile' + (owned ? '' : ' locked');
-        d.innerHTML = '<span class="pg-e">' + p.e + '</span>' + p.n
-          + (owned ? '' : '<span class="pg-lock">\uD83D\uDD12</span>');
-        g.appendChild(d);
+        const key = qid + '_' + i;
+        if (this.data.pieces[qid].indexOf(i) >= 0) {
+          const pos = this.data.layout[key] || this.DEFAULT_POS[g % this.DEFAULT_POS.length];
+          const d = document.createElement('div');
+          d.className = 'pg-piece';
+          d.style.left = pos.x + '%';
+          d.style.top = pos.y + '%';
+          d.dataset.x = pos.x;
+          d.dataset.y = pos.y;
+          d.innerHTML = '<span class="pg-e">' + p.e + '</span>' + p.n;
+          scene.appendChild(d);
+          makePieceDraggable(d, key);
+        }
+        g++;
       });
     });
+    if (this.totalPieces() === 0) {
+      const h = document.createElement('div');
+      h.className = 'pg-hint';
+      h.textContent = 'Finish a quiz to earn your first piece!';
+      scene.appendChild(h);
+    }
+    const lg = document.getElementById('pgLocked');
+    if (lg) {
+      lg.innerHTML = '';
+      order.forEach(qid => {
+        this.PIECES[qid].forEach((p, i) => {
+          if (this.data.pieces[qid].indexOf(i) < 0) {
+            const d = document.createElement('div');
+            d.className = 'pg-tile locked';
+            d.innerHTML = '<span class="pg-e">' + p.e + '</span>' + p.n + '<span class="pg-lock">\uD83D\uDD12</span>';
+            lg.appendChild(d);
+          }
+        });
+      });
+    }
     this.renderCounts();
   },
   renderStickers() {
@@ -594,6 +641,43 @@ const Rewards = {
 };
 Rewards.load();
 
+/* --- playground piece dragging (pointer events, touch + mouse) --- */
+function makePieceDraggable(el, key) {
+  el.addEventListener('pointerdown', ev => {
+    ev.preventDefault();
+    const scene = document.getElementById('pgScene');
+    if (!scene) return;
+    const sr = scene.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    const dx = ev.clientX - er.left, dy = ev.clientY - er.top;
+    try { el.setPointerCapture(ev.pointerId); } catch (e) {}
+    el.classList.add('dragging');
+    el.style.zIndex = 30;
+    function move(e2) {
+      let x = (e2.clientX - sr.left - dx) / sr.width * 100;
+      let y = (e2.clientY - sr.top - dy) / sr.height * 100;
+      x = Math.max(0, Math.min(77, x));
+      y = Math.max(0, Math.min(72, y));
+      el.style.left = x + '%';
+      el.style.top = y + '%';
+      el.dataset.x = x;
+      el.dataset.y = y;
+    }
+    function up() {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+      el.classList.remove('dragging');
+      el.style.zIndex = '';
+      Rewards.data.layout[key] = { x: parseFloat(el.dataset.x), y: parseFloat(el.dataset.y) };
+      Rewards.save();
+    }
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  });
+}
+
 /* --- round flow: 10 correct answers = one round --- */
 let pendingStickers = [];
 function rewardStar() {
@@ -604,7 +688,7 @@ function endRound(quizId, againFn, menuId) {
   const res = Rewards.finishRound(quizId);
   const got = pendingStickers.splice(0);
   let body = '';
-  if (res.piece) body += '<span class="big">' + res.piece.e + '</span>You earned the <b>' + res.piece.n + '</b> for your playground!';
+  if (res.piece) body += '<span class="big">' + res.piece.e + '</span>You earned the <b>' + res.piece.n + '</b>!<br>Drag it around in your playground!';
   if (got.length) body += (body ? '<br>' : '') + '<span class="big">' + got[0].e + '</span>New sticker: <b>' + got[0].n + '</b>! (' + Rewards.data.stickers.length + ' of 20)';
   if (!body) {
     body = '<span class="big">\u2B50</span>Great job! You earned 10 stars!';
