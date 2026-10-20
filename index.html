@@ -175,26 +175,14 @@
   .pg-piece { position: absolute; width: 24%; cursor: grab; touch-action: none;
     user-select: none; -webkit-user-select: none; z-index: 10; }
   .pg-piece img.pg-art { width: 100%; display: block; pointer-events: none; }
-  .pg-piece .pg-name { display: inline-block; font-weight: 800; color: #3a2b00;
-    font-size: .72rem; background: rgba(255,255,255,.88); border-radius: 10px;
-    padding: 1px 8px; margin-top: -2px; }
-  .pg-piece { text-align: center; }
   .pg-piece.dragging { cursor: grabbing; filter: drop-shadow(0 8px 10px rgba(0,0,0,.35)); }
-  .pg-piece.tapplay { animation: pg-bounce .7s ease; }
-  .pg-idle-sway { animation: pg-sway 3.4s ease-in-out infinite; transform-origin: top center; }
-  .pg-idle-bob { animation: pg-bob 2.8s ease-in-out infinite; }
-  .pg-idle-tilt { animation: pg-tilt 3.8s ease-in-out infinite; transform-origin: bottom center; }
-  @keyframes pg-sway { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+  .pg-piece.placed { animation: pg-settle .18s ease-out; }
+  @keyframes pg-settle { 0% { transform: scale(1.07); } 100% { transform: scale(1); } }
   @keyframes pg-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
-  @keyframes pg-tilt { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
-  @keyframes pg-bounce { 0% { transform: scale(1); } 30% { transform: scale(1.16) rotate(-5deg); }
-    60% { transform: scale(.94) rotate(3deg); } 100% { transform: scale(1); } }
   .pg-kid { position: absolute; bottom: 3%; width: 17%; z-index: 20; text-align: center;
     cursor: pointer; touch-action: manipulation; }
   .pg-kid img { width: 100%; display: block; pointer-events: none;
     animation: pg-bob 3.2s ease-in-out infinite; }
-  .pg-kid .pg-name { display: inline-block; font-weight: 800; color: #3a2b00;
-    font-size: .72rem; background: rgba(255,255,255,.88); border-radius: 10px; padding: 1px 8px; }
   .pg-kid.jump img { animation: pg-jump .65s ease; }
   @keyframes pg-jump { 0% { transform: translateY(0); } 40% { transform: translateY(-30px) rotate(-5deg); }
     70% { transform: translateY(0); } 85% { transform: translateY(-9px); } 100% { transform: translateY(0); } }
@@ -248,7 +236,7 @@
     <button class="home-card tint-purple wide" onclick="show('games')"><span class="hc-icon">🎮</span><span class="hc-title">Games</span><span class="hc-sub">Tic tac toe &amp; more</span></button>
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
-  <div class="ver">v29</div>
+  <div class="ver">v30</div>
 </div>
 
 <!-- REWARDS -->
@@ -630,7 +618,7 @@ const Rewards = {
           d.style.top = pos.y + '%';
           d.dataset.x = pos.x;
           d.dataset.y = pos.y;
-          d.innerHTML = '<img class="pg-art' + (p.anim !== 'none' ? ' pg-idle-' + p.anim : '') + '" src="' + PG_ART[p.img] + '" alt="' + p.n + '"><span class="pg-name">' + p.n + '</span>';
+          d.innerHTML = '<img class="pg-art" src="' + PG_ART[p.img] + '" alt="' + p.n + '">';
           scene.appendChild(d);
           makePieceDraggable(d, key);
         }
@@ -690,7 +678,7 @@ function renderPgKids(scene) {
     const d = document.createElement('div');
     d.className = 'pg-kid';
     d.style.left = k.x + '%';
-    d.innerHTML = '<img src="' + PG_ART[k.img] + '" alt="' + k.name + '"><span class="pg-name">' + k.name + '</span>';
+    d.innerHTML = '<img src="' + PG_ART[k.img] + '" alt="' + k.name + '">';
     d.onclick = () => {
       d.classList.remove('jump');
       void d.offsetWidth;
@@ -776,10 +764,10 @@ function makePieceDraggable(el, key) {
       if (moved) {
         Rewards.data.layout[key] = { x: parseFloat(el.dataset.x), y: parseFloat(el.dataset.y) };
         Rewards.save();
-      } else {
-        el.classList.remove('tapplay');
+        el.classList.remove('placed');
         void el.offsetWidth;
-        el.classList.add('tapplay');
+        el.classList.add('placed');
+      } else {
         pgSparkles(scene, el.offsetLeft + el.offsetWidth / 2, el.offsetTop, '');
       }
     }
