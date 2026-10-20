@@ -395,7 +395,7 @@
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
   <div style="text-align:center"><button class="grownups-link" onclick="show('grownups')">👤 Grown-ups</button></div>
-  <div class="ver">v3.7</div>
+  <div class="ver">v3.8</div>
 </div>
 
 <!-- REWARDS -->
@@ -1988,7 +1988,7 @@ const Read = {
   },
   blend() {
     const wd = this.book().words[this.curWord];
-    const keys = wd.w.toLowerCase().split('').map(ch => 'ph_' + ch);
+    const keys = wd.w.toLowerCase().split('').map(ch => 'phb_' + ch);
     this._chain(keys, () => {
       wd.w.split('').forEach((ch, i) => { const el = document.getElementById('rdL' + i); if (el) el.classList.add('lit'); });
       this._one(this.book().wordClips[wd.w.toLowerCase()]);
