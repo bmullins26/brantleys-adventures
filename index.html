@@ -295,6 +295,16 @@
     font-weight: 800; text-align: center; padding: 16px; }
   #racerFinal { font-size: 1.7rem; }
   #racerMsg { margin-top: 6px; font-size: 1.05rem; }
+
+  /* --- Fruit Merge --- */
+  #mergeWrap { position: relative; max-width: 360px; margin: 0 auto; }
+  #mergeCanvas { width: 100%; height: auto; display: block; border-radius: 18px; background: #eaf7ff;
+    touch-action: none; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+  #mergeOver { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; background: rgba(20,24,40,.45); border-radius: 18px; color: #fff;
+    font-weight: 800; text-align: center; padding: 16px; }
+  #mergeFinal { font-size: 1.7rem; }
+  #mergeMsg { margin-top: 6px; font-size: 1.05rem; }
 </style>
 </head>
 <body>
@@ -318,7 +328,7 @@
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
   <div style="text-align:center"><button class="grownups-link" onclick="show('grownups')">👤 Grown-ups</button></div>
-  <div class="ver">v2.5</div>
+  <div class="ver">v2.6</div>
 </div>
 
 <!-- REWARDS -->
@@ -411,17 +421,28 @@
 <div id="games" class="screen">
   <button class="back-btn" onclick="show('home')">⬅ Home</button>
   <h1>🎮 Games</h1>
+  <p class="subtitle">Pick a game!</p>
+  <div class="home-grid">
+    <button class="home-card tint-yellow wide" onclick="show('tttMenu')"><span class="hc-icon">⭕</span><span class="hc-title">Tic Tac Toe</span><span class="hc-sub">X's and O's!</span></button>
+    <button class="home-card tint-pink wide" onclick="show('racer')"><span class="hc-icon">🏎️</span><span class="hc-title">RC Racer</span><span class="hc-sub">Dodge the cars!</span></button>
+    <button class="home-card tint-purple wide" onclick="show('merge')"><span class="hc-icon">🍉</span><span class="hc-title">Fruit Merge</span><span class="hc-sub">Drop &amp; grow fruit!</span></button>
+  </div>
+</div>
+
+
+<div id="tttMenu" class="screen">
+  <button class="back-btn" onclick="show('games')">⬅ Games</button>
+  <h1>⭕ Tic Tac Toe</h1>
   <p class="subtitle">Pick how to play!</p>
   <div class="home-grid">
     <button class="home-card tint-yellow" onclick="TicTacToe.start('solo')"><span class="hc-icon">🧒</span><span class="hc-title">Solo</span><span class="hc-sub">Practice board</span></button>
     <button class="home-card tint-blue" onclick="TicTacToe.start('bot')"><span class="hc-icon">🤖</span><span class="hc-title">Vs Bot</span><span class="hc-sub">Beat the computer</span></button>
     <button class="home-card tint-green wide" onclick="TicTacToe.start('friend')"><span class="hc-icon">👥</span><span class="hc-title">2 Players</span><span class="hc-sub">Play with a friend</span></button>
-    <button class="home-card tint-pink wide" onclick="show('racer')"><span class="hc-icon">🏎️</span><span class="hc-title">RC Racer</span><span class="hc-sub">Dodge the cars!</span></button>
   </div>
 </div>
 
 <div id="tictactoe" class="screen">
-  <button class="back-btn" onclick="show('games')">⬅ Games</button>
+  <button class="back-btn" onclick="show('tttMenu')">⬅ Tic Tac Toe</button>
   <h1 id="tttTitle">⭕ Tic Tac Toe</h1>
   <p id="tttStatus" class="ttt-status">X goes first!</p>
   <div class="ttt-board" id="tttBoard"></div>
@@ -445,6 +466,22 @@
     </div>
   </div>
   <p class="subtitle">Drag to steer!</p>
+</div>
+
+
+<div id="merge" class="screen">
+  <button class="back-btn" onclick="show('games')">⬅ Games</button>
+  <h1>🍉 Fruit Merge</h1>
+  <div class="racer-hud"><span id="mergeScore">Score: 0</span><span id="mergeNext">Next: 🍒</span><span id="mergeBest">Best: 0</span></div>
+  <div id="mergeWrap">
+    <canvas id="mergeCanvas" width="340" height="500"></canvas>
+    <div id="mergeOver">
+      <div id="mergeFinal">🍉 Fruit Merge</div>
+      <div id="mergeMsg">Drop a fruit. Two of the same kind grow into a bigger fruit!</div>
+      <button class="save-btn" id="mergeGo" style="max-width:240px;margin:12px auto 0">▶️ Play!</button>
+    </div>
+  </div>
+  <p class="subtitle">🍒 → 🍓 → 🍇 → 🍊 → 🍎 → 🍐 → 🍍 → 🍈 → 🍉</p>
 </div>
 
 <div id="alpha" class="screen">
@@ -936,6 +973,262 @@ const Racer = {
       c.fillText(t.s, t.x, t.y);
       c.globalAlpha = 1;
     }
+  }
+};
+
+
+/* --- Fruit Merge: drop fruit, two of a kind grow bigger --- */
+const Merge = {
+  cv: null, ctx: null, raf: 0, alive: false, playing: false, last: 0, ac: null,
+  W: 340, H: 500, lineY: 74,
+  EMOJI: ['🍒', '🍓', '🍇', '🍊', '🍎', '🍐', '🍍', '🍈', '🍉'],
+  NAMES: ['Cherry', 'Strawberry', 'Grapes', 'Orange', 'Apple', 'Pear', 'Pineapple', 'Melon', 'Watermelon'],
+  RADII: [16, 22, 29, 37, 46, 56, 67, 79, 92],
+  COLORS: ['#e5484d', '#ff5d73', '#9775fa', '#ffa94d', '#ff6b6b', '#a9e34b', '#ffd43b', '#69db7c', '#2f9e44'],
+  PTS: [0, 3, 6, 10, 15, 21, 28, 36, 45],
+  fruits: [], parts: [], texts: [],
+  aimX: 170, next: 0, cooldown: 0, score: 0, overT: 0, born: 0,
+  best: parseInt(localStorage.getItem('ba_merge_best') || '0', 10) || 0,
+  init() {
+    if (this.cv) { this.hud(); return; }
+    this.cv = document.getElementById('mergeCanvas');
+    if (!this.cv) return;
+    this.ctx = this.cv.getContext('2d');
+    const setAim = ev => {
+      const r = this.cv.getBoundingClientRect();
+      this.aimX = (ev.clientX - r.left) / r.width * this.W;
+    };
+    this.cv.addEventListener('pointermove', setAim);
+    this.cv.addEventListener('pointerdown', ev => { ev.preventDefault(); setAim(ev); this.drop(); });
+    addEventListener('keydown', ev => {
+      if (!this.playing) return;
+      if (ev.key === 'ArrowLeft') this.aimX -= 18;
+      if (ev.key === 'ArrowRight') this.aimX += 18;
+      if (ev.key === ' ') { ev.preventDefault(); this.drop(); }
+    });
+    document.getElementById('mergeGo').addEventListener('click', () => this.start());
+    this.next = this.pickTier();
+    this.drawScene();
+    this.hud();
+  },
+  start() {
+    this.init();
+    this.fruits = []; this.parts = []; this.texts = [];
+    this.score = 0; this.overT = 0; this.cooldown = 0;
+    this.next = this.pickTier();
+    document.getElementById('mergeOver').style.display = 'none';
+    this.playing = true;
+    this.hud();
+    this.run();
+  },
+  run() {
+    if (this.alive) return;
+    this.alive = true;
+    this.last = performance.now();
+    this.raf = requestAnimationFrame(t => this.loop(t));
+  },
+  stop() { this.alive = false; cancelAnimationFrame(this.raf); },
+  pickTier() {
+    const bag = [0, 0, 0, 1, 1, 2, 2, 3];
+    return bag[Math.floor(Math.random() * bag.length)];
+  },
+  drop() {
+    if (!this.playing || this.cooldown > 0) return;
+    const r = this.RADII[this.next];
+    const x = Math.max(r + 2, Math.min(this.W - r - 2, this.aimX));
+    this.fruits.push({ tier: this.next, x: x, y: 44, vx: 0, vy: 0, born: this.born++ });
+    this.next = this.pickTier();
+    this.cooldown = 0.45;
+    this.beep(300, 0.05, 'sine', 0.03);
+    this.hud();
+  },
+  beep(freq, dur, type, vol) {
+    try {
+      this.ac = this.ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = this.ac.createOscillator(), g = this.ac.createGain();
+      o.type = type || 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol || 0.06, this.ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, this.ac.currentTime + dur);
+      o.connect(g); g.connect(this.ac.destination);
+      o.start(); o.stop(this.ac.currentTime + dur);
+    } catch (e) {}
+  },
+  loop(t) {
+    if (!this.alive) return;
+    const dt = Math.min(1 / 30, (t - this.last) / 1000);
+    this.last = t;
+    if (this.playing) this.step(dt);
+    this.drawScene();
+    if (this.alive) this.raf = requestAnimationFrame(tt => this.loop(tt));
+  },
+  step(dt) {
+    if (this.cooldown > 0) this.cooldown -= dt;
+    const G = 1600, SUB = 3, h = dt / SUB;
+    for (let s = 0; s < SUB; s++) {
+      for (const f of this.fruits) {
+        f.vy += G * h;
+        f.x += f.vx * h;
+        f.y += f.vy * h;
+        const r = this.RADII[f.tier];
+        if (f.x < r) { f.x = r; f.vx = Math.abs(f.vx) * 0.3; }
+        if (f.x > this.W - r) { f.x = this.W - r; f.vx = -Math.abs(f.vx) * 0.3; }
+        if (f.y > this.H - r) {
+          f.y = this.H - r;
+          if (f.vy > 0) f.vy = -f.vy * 0.22;
+          if (Math.abs(f.vy) < 26) f.vy = 0;
+          f.vx *= 0.90;
+        }
+        if (f.y < r) { f.y = r; if (f.vy < 0) f.vy = 0; }
+      }
+      // collisions
+      const fs = this.fruits;
+      for (let i = 0; i < fs.length; i++) {
+        for (let j = i + 1; j < fs.length; j++) {
+          const a = fs[i], b = fs[j];
+          const ra = this.RADII[a.tier], rb = this.RADII[b.tier];
+          let dx = b.x - a.x, dy = b.y - a.y;
+          let d2 = dx * dx + dy * dy;
+          const min = ra + rb;
+          if (d2 >= min * min || d2 === 0) continue;
+          const d = Math.sqrt(d2), nx = dx / d, ny = dy / d;
+          const overlap = (min - d) * 0.8;
+          const ma = ra * ra, mb = rb * rb, mt = ma + mb;
+          a.x -= nx * overlap * (mb / mt); a.y -= ny * overlap * (mb / mt);
+          b.x += nx * overlap * (ma / mt); b.y += ny * overlap * (ma / mt);
+          const rvx = b.vx - a.vx, rvy = b.vy - a.vy;
+          const vn = rvx * nx + rvy * ny;
+          if (vn < 0) {
+            const imp = -vn * 1.12;
+            a.vx -= nx * imp * (mb / mt); a.vy -= ny * imp * (mb / mt);
+            b.vx += nx * imp * (ma / mt); b.vy += ny * imp * (ma / mt);
+          }
+        }
+      }
+    }
+    this.tryMerge();
+    // particles + texts
+    for (const p of this.parts) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; }
+    this.parts = this.parts.filter(p => p.t < 0.45);
+    for (const t of this.texts) { t.t += dt; t.y -= 26 * dt; }
+    this.texts = this.texts.filter(t => t.t < 0.9);
+    // game over: a settled fruit pokes above the line for too long
+    const danger = this.fruits.some(f => (f.y - this.RADII[f.tier]) < this.lineY && Math.abs(f.vy) < 60 && f.y > this.lineY);
+    if (danger) {
+      this.overT += dt;
+      if (this.overT > 1.6) this.over();
+    } else this.overT = Math.max(0, this.overT - dt * 2);
+  },
+  tryMerge() {
+    const fs = this.fruits;
+    for (let i = 0; i < fs.length; i++) {
+      for (let j = i + 1; j < fs.length; j++) {
+        const a = fs[i], b = fs[j];
+        if (a.tier !== b.tier || a.dead || b.dead) continue;
+        const rr = this.RADII[a.tier] * 2;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const lim = rr * 1.03;
+        if (dx * dx + dy * dy > lim * lim) continue;
+        a.dead = b.dead = true;
+        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        if (a.tier >= 8) {
+          this.score += 55;
+          this.texts.push({ x: mx, y: my, s: '🍉🍉 +55!', t: 0 });
+          this.beep(760, 0.25, 'triangle', 0.09);
+        } else {
+          const nt = a.tier + 1;
+          this.fruits.push({ tier: nt, x: mx, y: my, vx: (a.vx + b.vx) / 2, vy: -70, born: this.born++ });
+          this.score += this.PTS[nt];
+          this.texts.push({ x: mx, y: my - this.RADII[nt] - 6, s: this.EMOJI[nt] + ' +' + this.PTS[nt], t: 0 });
+          this.beep(320 + nt * 55, 0.13, 'triangle', 0.07);
+          for (let k = 0; k < 7; k++) {
+            const ang = Math.random() * 6.28, sp = 60 + Math.random() * 110;
+            this.parts.push({ x: mx, y: my, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 40, t: 0, color: this.COLORS[nt] });
+          }
+        }
+        this.hud();
+        this.fruits = this.fruits.filter(f => !f.dead);
+        return; // one merge per step keeps chains readable
+      }
+    }
+    this.fruits = this.fruits.filter(f => !f.dead);
+  },
+  over() {
+    this.playing = false;
+    this.beep(392, 0.16, 'triangle', 0.07);
+    setTimeout(() => this.beep(330, 0.16, 'triangle', 0.07), 130);
+    setTimeout(() => this.beep(262, 0.3, 'triangle', 0.07), 260);
+    const isBest = this.score > this.best;
+    if (isBest) {
+      this.best = this.score;
+      try { localStorage.setItem('ba_merge_best', String(this.best)); } catch (e) {}
+    }
+    document.getElementById('mergeFinal').textContent = '🍉 Score: ' + this.score;
+    document.getElementById('mergeMsg').textContent = isBest && this.score > 0 ? '🏆 New best! Juicy!' : 'Best: ' + this.best + ' — play again!';
+    document.getElementById('mergeGo').textContent = '🔁 Play Again!';
+    document.getElementById('mergeOver').style.display = 'flex';
+    this.hud();
+  },
+  hud() {
+    const s = document.getElementById('mergeScore'); if (s) s.textContent = 'Score: ' + this.score;
+    const n = document.getElementById('mergeNext'); if (n) n.textContent = 'Next: ' + this.EMOJI[this.next];
+    const b = document.getElementById('mergeBest'); if (b) b.textContent = 'Best: ' + this.best;
+  },
+  drawScene() {
+    const c = this.ctx;
+    if (!c) return;
+    // well
+    const grad = c.createLinearGradient(0, 0, 0, this.H);
+    grad.addColorStop(0, '#eaf7ff'); grad.addColorStop(1, '#d3ecff');
+    c.fillStyle = grad;
+    c.fillRect(0, 0, this.W, this.H);
+    c.fillStyle = '#b08968';
+    c.fillRect(0, this.H - 10, this.W, 10);
+    // danger line
+    c.strokeStyle = this.overT > 0 ? 'rgba(224,49,49,.9)' : 'rgba(224,49,49,.35)';
+    c.lineWidth = 2.5;
+    c.setLineDash([8, 7]);
+    c.beginPath(); c.moveTo(4, this.lineY); c.lineTo(this.W - 4, this.lineY); c.stroke();
+    c.setLineDash([]);
+    // drop guide + ghost fruit
+    if (this.playing && this.cooldown <= 0) {
+      const r = this.RADII[this.next];
+      const x = Math.max(r + 2, Math.min(this.W - r - 2, this.aimX));
+      c.strokeStyle = 'rgba(30,60,90,.25)';
+      c.lineWidth = 2; c.setLineDash([4, 8]);
+      c.beginPath(); c.moveTo(x, 58); c.lineTo(x, this.H - 12); c.stroke();
+      c.setLineDash([]);
+      c.globalAlpha = 0.75;
+      this.drawFruit(x, 44, this.next);
+      c.globalAlpha = 1;
+    }
+    for (const f of this.fruits) this.drawFruit(f.x, f.y, f.tier);
+    // particles
+    for (const p of this.parts) {
+      c.globalAlpha = Math.max(0, 1 - p.t / 0.45);
+      c.fillStyle = p.color;
+      c.beginPath(); c.arc(p.x, p.y, 4, 0, 7); c.fill();
+      c.globalAlpha = 1;
+    }
+    // score texts
+    c.font = '800 16px "Baloo 2", sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    for (const t of this.texts) {
+      c.globalAlpha = Math.max(0, 1 - t.t / 0.9);
+      c.fillStyle = '#1e5b2e';
+      c.fillText(t.s, t.x, t.y);
+      c.globalAlpha = 1;
+    }
+  },
+  drawFruit(x, y, tier) {
+    const c = this.ctx, r = this.RADII[tier];
+    c.beginPath(); c.arc(x, y, r, 0, 7);
+    c.fillStyle = this.COLORS[tier]; c.fill();
+    c.lineWidth = 2.5; c.strokeStyle = 'rgba(0,0,0,.30)'; c.stroke();
+    c.beginPath(); c.arc(x - r * 0.32, y - r * 0.36, r * 0.20, 0, 7);
+    c.fillStyle = 'rgba(255,255,255,.35)'; c.fill();
+    c.font = Math.round(r * 1.12) + 'px serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(this.EMOJI[tier], x, y + r * 0.06);
   }
 };
 
@@ -1705,6 +1998,10 @@ function show(id) {
   if (typeof Racer !== "undefined") {
     if (id === "racer") Racer.init();
     else Racer.stop();
+  }
+  if (typeof Merge !== "undefined") {
+    if (id === "merge") Merge.init();
+    else Merge.stop();
   }
 }
 
