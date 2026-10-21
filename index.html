@@ -321,21 +321,35 @@
     box-shadow: 0 3px 0 rgba(0,0,0,.18); cursor: pointer; }
   .dpad button:active { transform: translateY(2px); box-shadow: none; }
   /* --- Crash It! --- */
-  #crashWrap { position: relative; max-width: 700px; margin: 0 auto; }
+  #crashit.crash-fs { position: fixed; inset: 0; height: 100vh; height: 100dvh; max-width: none; margin: 0;
+    padding: 8px 10px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); display: flex; flex-direction: column;
+    background: linear-gradient(160deg, #fff9ef 0%, #ffefd9 55%, #ffe3c2 100%); z-index: 60;
+    box-sizing: border-box; overflow: hidden; }
+  .crash-top { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+  .crash-back { margin: 0; padding: 8px 16px; font-size: 1rem; }
+  .crash-title { font-size: 1.25rem; font-weight: 900; white-space: nowrap; }
+  #crashScore { margin-left: auto; font-size: 1.05rem; font-weight: 900; white-space: nowrap; background: rgba(255,255,255,.8);
+    border-radius: 999px; padding: 6px 14px; box-shadow: 0 3px 0 rgba(0,0,0,.12); }
+  #crashStage { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center;
+    padding: 6px 0; box-sizing: border-box; }
+  #crashPlay { position: relative; line-height: 0; }
   #crashCanvas { width: 100%; height: auto; display: block; border-radius: 18px; background: #7ecbf2;
     touch-action: none; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
-  .crash-btns { position: absolute; bottom: 10px; display: flex; gap: 10px; z-index: 3; }
-  .crash-left { left: 10px; }
-  .crash-right { right: 10px; }
-  .crash-btns button { width: 64px; height: 64px; border-radius: 50%; border: 3px solid rgba(255,255,255,.85);
-    font-size: 1.2rem; font-weight: 900; color: #fff; cursor: pointer; touch-action: none;
+  #crashDeck { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: rgba(255,255,255,.55); border-radius: 20px; padding: 10px 12px; box-shadow: 0 3px 0 rgba(0,0,0,.10); }
+  .crash-side { display: flex; gap: 12px; }
+  .crash-side button { width: 76px; height: 76px; border-radius: 50%; border: 3px solid rgba(255,255,255,.9);
+    font-size: 1.35rem; font-weight: 900; color: #fff; cursor: pointer; touch-action: none;
     user-select: none; -webkit-user-select: none; box-shadow: 0 4px 0 rgba(0,0,0,.25); padding: 0; }
-  .crash-left button { background: rgba(227,63,47,.85); }
-  .crash-right button { background: rgba(47,127,227,.85); }
-  .crash-btns button:active { transform: translateY(3px); box-shadow: none; }
+  .crash-sideL button { background: rgba(227,63,47,.92); }
+  .crash-sideR button { background: rgba(47,127,227,.92); }
+  .crash-side button:active { transform: translateY(3px); box-shadow: none; }
+  .crash-hint { font-weight: 800; font-size: .95rem; text-align: center; opacity: .75; }
+  @media (max-width: 600px) { .crash-hint { display: none; } }
+  @media (max-height: 500px) { .crash-side button { width: 64px; height: 64px; } .crash-title { font-size: 1.05rem; } }
   #crashOver { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
     justify-content: center; background: rgba(20,24,40,.45); border-radius: 18px; color: #fff;
-    font-weight: 800; text-align: center; padding: 16px; z-index: 4; }
+    font-weight: 800; text-align: center; padding: 16px; z-index: 4; line-height: 1.3; }
   #crashFinal { font-size: 1.9rem; }
   #crashMsg { margin-top: 6px; font-size: 1.1rem; }
   /* --- YouTube card (grown-ups) --- */
@@ -383,7 +397,7 @@
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
   <div style="text-align:center"><button class="grownups-link" onclick="show('grownups')">👤 Grown-ups</button></div>
-  <div class="ver">v3.14</div>
+  <div class="ver">v3.15</div>
 </div>
 
 <!-- REWARDS -->
@@ -581,25 +595,32 @@
 </div>
 
 <div id="crashit" class="screen">
-  <button class="back-btn" onclick="show('crashMenu')">⬅ Crash It!</button>
-  <h1>🚗 Crash It!</h1>
-  <div id="crashWrap">
-    <canvas id="crashCanvas" width="680" height="400"></canvas>
-    <div class="crash-btns crash-left">
+  <div class="crash-top">
+    <button class="back-btn crash-back" onclick="show('crashMenu')">⬅ Back</button>
+    <span class="crash-title">🚗 Crash It!</span>
+    <span id="crashScore">🔴 0 · 0 🔵</span>
+  </div>
+  <div id="crashStage">
+    <div id="crashPlay">
+      <canvas id="crashCanvas" width="680" height="400"></canvas>
+      <div id="crashOver" style="display:none">
+        <div id="crashFinal">🏆</div>
+        <div id="crashMsg"></div>
+        <button class="save-btn" id="crashGo" style="max-width:240px;margin:12px auto 0">🔁 Play Again</button>
+      </div>
+    </div>
+  </div>
+  <div id="crashDeck">
+    <div class="crash-side crash-sideL">
       <button id="crashB0" aria-label="Red back">◀◀</button>
       <button id="crashF0" aria-label="Red forward">▶▶</button>
     </div>
-    <div class="crash-btns crash-right" id="crashBtnsR">
+    <div class="crash-hint">🔴 Red buttons · 🔵 Blue buttons</div>
+    <div class="crash-side crash-sideR" id="crashBtnsR">
       <button id="crashB1" aria-label="Blue back">◀◀</button>
       <button id="crashF1" aria-label="Blue forward">▶▶</button>
     </div>
-    <div id="crashOver" style="display:none">
-      <div id="crashFinal">🏆</div>
-      <div id="crashMsg"></div>
-      <button class="save-btn" id="crashGo" style="max-width:240px;margin:12px auto 0">🔁 Play Again</button>
-    </div>
   </div>
-  <p class="subtitle">🔴 Red uses the red buttons · 🔵 Blue uses the blue buttons!</p>
 </div>
 
 <div id="write" class="screen">
@@ -1063,7 +1084,9 @@ const CrashIt = {
     return loc.map(p => ({ x: c.x + p[0] * co - p[1] * si, y: c.y + p[0] * si + p[1] * co }));
   },
   init() {
-    if (this.cv) { this.draw(); return; }
+    const scr = document.getElementById('crashit');
+    if (scr && scr.classList) scr.classList.add('crash-fs');
+    if (this.cv) { this.fit(); this.draw(); return; }
     this.cv = document.getElementById('crashCanvas');
     if (!this.cv) return;
     this.ctx = this.cv.getContext('2d');
@@ -1096,8 +1119,25 @@ const CrashIt = {
       if (k === 'ArrowRight') this.keys[1].fwd = false;
     });
     document.getElementById('crashGo').addEventListener('click', () => this.newMatch());
+    addEventListener('resize', () => this.fit());
     this.cars = [this.newCar(0), this.newCar(1)];
+    this.fit();
     this.draw();
+  },
+  fit() {
+    if (!this.cv || !this.cv.style) return;
+    const st = document.getElementById('crashStage');
+    if (!st) return;
+    const aw = st.clientWidth, ah = st.clientHeight;
+    if (!aw || !ah) return;
+    const s = Math.min(aw / this.W, ah / this.H);
+    if (!isFinite(s) || s <= 0) return;
+    this.cv.style.width = Math.max(60, Math.floor(this.W * s)) + 'px';
+    this.cv.style.height = Math.max(60, Math.floor(this.H * s)) + 'px';
+  },
+  scoreText() {
+    const el = document.getElementById('crashScore');
+    if (el) el.textContent = '🔴 ' + this.score[0] + ' · ' + this.score[1] + ' 🔵';
   },
   start(mode) {
     this.mode = mode;
@@ -1109,6 +1149,8 @@ const CrashIt = {
   newMatch() {
     this.init();
     this.score = [0, 0];
+    this.scoreText();
+    this.fit();
     document.getElementById('crashOver').style.display = 'none';
     this.resetCars();
     this.run();
@@ -1128,7 +1170,11 @@ const CrashIt = {
     this.last = performance.now();
     this.raf = requestAnimationFrame(t => this.loop(t));
   },
-  stop() { this.alive = false; cancelAnimationFrame(this.raf); },
+  stop() {
+    this.alive = false; cancelAnimationFrame(this.raf);
+    const scr = document.getElementById('crashit');
+    if (scr && scr.classList) scr.classList.remove('crash-fs');
+  },
   loop(t) {
     if (!this.alive) return;
     let dt = Math.min(0.06, (t - this.last) / 1000);
@@ -1274,6 +1320,7 @@ const CrashIt = {
   pointScored(winner, cause, at) {
     if (this.state !== 'play') return;
     this.score[winner]++;
+    this.scoreText();
     this.state = 'point';
     this.stateT = 1.25;
     this.msg = cause === 'bonk' ? 'BONK!' : 'CRASH!';
