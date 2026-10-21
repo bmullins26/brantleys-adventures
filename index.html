@@ -365,7 +365,7 @@
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
   <div style="text-align:center"><button class="grownups-link" onclick="show('grownups')">👤 Grown-ups</button></div>
-  <div class="ver">v3.12</div>
+  <div class="ver">v3.13</div>
 </div>
 
 <!-- REWARDS -->
@@ -738,7 +738,9 @@
     </div>
   </div>
   <div id="songVideoWrap">
-    <video id="songVideo" controls playsinline preload="metadata" src="https://files.catbox.moe/9yutr8.mp4">
+    <div style="font-weight:800;font-size:1.25rem;margin:0 0 4px">🎵 Sing Your Sounds</div>
+    <p class="subtitle" style="margin:0 0 8px">Episode 1 &middot; the alphabet song</p>
+    <video id="songVideo" controls playsinline preload="none">
   </video>
     <div style="font-weight:800;font-size:1.25rem;margin:18px 0 4px">🔢 Count to Twenty!</div>
     <p class="subtitle" style="margin:0 0 8px">Episode 2 &middot; with the 6-7 Dance Break!</p>
@@ -764,7 +766,7 @@
 })();
 
 /* --- Jam Out Episode 2: media lives in the Pages repo as base64 parts
-   (media/ep2a.b64, media/ep2v_N.b64); assembled to blob URLs on demand. --- */
+   (media/ep2a_N.b64, media/ep2v_N.b64); assembled to blob URLs on demand. --- */
 const Ep2 = {
   BASE: 'https://bmullins26.github.io/brantleys-adventures/media/',
   urls: {},
@@ -782,22 +784,17 @@ const Ep2 = {
   _assemble(kind, done) {
     if (this.urls[kind]) { done(this.urls[kind]); return; }
     var self = this;
-    if (kind === 'ep2a') {
-      fetch(this.BASE + 'ep2a.b64').then(function (r) { if (!r.ok) throw 0; return r.text(); })
-        .then(function (t) { self.urls[kind] = self._b64ToUrl(t, 'audio/mpeg'); done(self.urls[kind]); })
-        .catch(function () { done(null); });
-    } else {
-      var parts = [], i = 0;
-      (function next() {
-        fetch(self.BASE + 'ep2v_' + i + '.b64').then(function (r) { if (!r.ok) throw 0; return r.text(); })
-          .then(function (t) { parts.push(t); i++; next(); })
-          .catch(function () {
-            if (!parts.length) { done(null); return; }
-            self.urls[kind] = self._b64ToUrl(parts.join(''), 'video/mp4');
-            done(self.urls[kind]);
-          });
-      })();
-    }
+    var mime = kind === 'ep2a' ? 'audio/mpeg' : 'video/mp4';
+    var parts = [], i = 0;
+    (function next() {
+      fetch(self.BASE + kind + '_' + i + '.b64').then(function (r) { if (!r.ok) throw 0; return r.text(); })
+        .then(function (t) { parts.push(t); i++; next(); })
+        .catch(function () {
+          if (!parts.length) { done(null); return; }
+          self.urls[kind] = self._b64ToUrl(parts.join(''), mime);
+          done(self.urls[kind]);
+        });
+    })();
   },
   prefetchVideo() {
     var v = document.getElementById('songVideo2');
@@ -811,12 +808,39 @@ const Ep2 = {
   },
   prefetchAudio() {
     var a = document.getElementById('songAudioEl2');
-    if (!a || a.src || this._loading.ep2a) return;
+    if (!a || this._loading.ep2a) return;
+    if (this.urls.ep2a) {
+      if (!a.src) { a.src = this.urls.ep2a; try { a.load(); } catch (e) {} }
+      return;
+    }
+    if (a.src) return;
+    this._loadAudio(false);
+  },
+  _loadAudio(playAfter) {
+    var a = document.getElementById('songAudioEl2');
+    var note = document.getElementById('ep2AudioNote');
+    if (!a) return;
+    if (this.urls.ep2a) {
+      if (!a.src) { a.src = this.urls.ep2a; try { a.load(); } catch (e) {} }
+      if (note) note.style.display = 'none';
+      if (playAfter) { try { a.play(); } catch (e) {} }
+      return;
+    }
+    if (this._loading.ep2a) { if (playAfter) this._audioPlayAfter = true; return; }
     this._loading.ep2a = true;
+    this._audioPlayAfter = !!playAfter;
+    if (note) { note.textContent = 'Loading the song\u2026'; note.style.display = ''; }
     var self = this;
     this._assemble('ep2a', function (url) {
       self._loading.ep2a = false;
-      if (url && !a.src) a.src = url;
+      if (!url) {
+        if (note) { note.textContent = "Couldn't load \u2014 tap the song to try again"; note.style.display = ''; }
+        return;
+      }
+      if (note) note.style.display = 'none';
+      a.src = url;
+      try { a.load(); } catch (e) {}
+      if (self._audioPlayAfter) { self._audioPlayAfter = false; try { a.play(); } catch (e) {} }
     });
   },
   loadVideo() {
@@ -846,17 +870,17 @@ const Ep2 = {
     if (!a || a._ep2wired) return;
     a._ep2wired = true;
     var self = this;
-    a.addEventListener('pointerdown', function () {
-      if (self.urls.ep2a || a.src) return;
-      var note = document.getElementById('ep2AudioNote');
-      if (note) note.style.display = '';
-      self._assemble('ep2a', function (url) {
-        if (note) note.style.display = 'none';
-        if (!url) return;
-        a.src = url;
-        try { a.play(); } catch (e) {}
-      });
-    });
+    var tap = function () {
+      if (a.error) { try { a.removeAttribute('src'); a.load(); } catch (e) {} }
+      if (self.urls.ep2a) {
+        if (!a.src) { a.src = self.urls.ep2a; try { a.load(); } catch (e) {} }
+        return;
+      }
+      self._loading.ep2a = false;
+      self._loadAudio(true);
+    };
+    a.addEventListener('pointerdown', tap);
+    a.addEventListener('click', tap);
   },
   pauseAll() {
     try { var v = document.getElementById('songVideo2'); if (v) v.pause(); } catch (e) {}
@@ -882,6 +906,50 @@ try {
     try { var v1b = document.getElementById('songVideo'); if (v1b) v1b.pause(); } catch (e) {}
     try { var v2b = document.getElementById('songVideo2'); if (v2b) v2b.pause(); } catch (e) {}
   });
+} catch (e) {}
+
+/* --- Jam Out Episode 1 (web build only): video lives in the Pages repo as
+   base64 parts (media/ep1v_N.b64); assembled to a blob URL on Jam Out open.
+   The canonical/APK build embeds the video instead and never loads this. --- */
+const Ep1 = {
+  BASE: 'https://bmullins26.github.io/brantleys-adventures/media/',
+  url: null,
+  _loading: false,
+  _b64ToUrl(b64, mime) {
+    var chunks = [], SL = 1000000;
+    for (var i = 0; i < b64.length; i += SL) {
+      var s = b64.slice(i, i + SL);
+      var bin = atob(s), bytes = new Uint8Array(bin.length);
+      for (var k = 0; k < bin.length; k++) bytes[k] = bin.charCodeAt(k);
+      chunks.push(bytes);
+    }
+    return URL.createObjectURL(new Blob(chunks, { type: mime }));
+  },
+  prefetch() {
+    var v = document.getElementById('songVideo');
+    if (!v || this._loading) return;
+    if (this.url) {
+      if (!v.src) { v.src = this.url; try { v.load(); } catch (e) {} }
+      return;
+    }
+    if (v.src) return;
+    this._loading = true;
+    var self = this, parts = [], i = 0;
+    (function next() {
+      fetch(self.BASE + 'ep1v_' + i + '.b64').then(function (r) { if (!r.ok) throw 0; return r.text(); })
+        .then(function (t) { parts.push(t); i++; next(); })
+        .catch(function () {
+          self._loading = false;
+          if (!parts.length) return;
+          self.url = self._b64ToUrl(parts.join(''), 'video/mp4');
+          if (!v.src) { v.src = self.url; try { v.load(); } catch (e) {} }
+        });
+    })();
+  }
+};
+try {
+  var _v1tap = document.getElementById('songVideo');
+  if (_v1tap) _v1tap.addEventListener('pointerdown', function () { try { Ep1.prefetch(); } catch (e) {} });
 } catch (e) {}
 
 /* --- Tic Tac Toe: solo practice, vs bot, 2 players --- */
@@ -2733,7 +2801,7 @@ function speakFallback(text, rate) {
 function show(id) {
   stopAllAudio();
   try { if (window.Ep2) Ep2.pauseAll(); } catch (e) {}
-  if (id === 'song') { try { Ep2.prefetchVideo(); } catch (e) {} }
+  if (id === 'song') { try { Ep2.prefetchVideo(); } catch (e) {} try { Ep2.prefetchAudio(); } catch (e) {} try { Ep1.prefetch(); } catch (e) {} }
   navToken++;
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
