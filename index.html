@@ -336,14 +336,17 @@
   #crashCanvas { width: 100%; height: auto; display: block; border-radius: 18px; background: #7ecbf2;
     touch-action: none; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
   #crashDeck { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    background: rgba(255,255,255,.55); border-radius: 20px; padding: 10px 12px; box-shadow: 0 3px 0 rgba(0,0,0,.10); }
-  .crash-side { display: flex; gap: 12px; }
+    background: rgba(255,255,255,.55); border-radius: 20px; padding: 10px; box-shadow: 0 3px 0 rgba(0,0,0,.10); }
+  .crash-side { display: flex; gap: 18px; }
   .crash-side button { width: 76px; height: 76px; border-radius: 50%; border: 3px solid rgba(255,255,255,.9);
     font-size: 1.35rem; font-weight: 900; color: #fff; cursor: pointer; touch-action: none;
     user-select: none; -webkit-user-select: none; box-shadow: 0 4px 0 rgba(0,0,0,.25); padding: 0; }
   .crash-sideL button { background: rgba(227,63,47,.92); }
   .crash-sideR button { background: rgba(47,127,227,.92); }
   .crash-side button:active { transform: translateY(3px); box-shadow: none; }
+  /* Vs Bot: split P1's pair across the deck — one button under each thumb. */
+  #crashDeck.deck-bot .crash-sideL { flex: 1 1 auto; justify-content: space-between; }
+  #crashDeck.deck-bot .crash-hint { display: none; }
   .crash-hint { font-weight: 800; font-size: .95rem; text-align: center; opacity: .75; }
   @media (max-width: 600px) { .crash-hint { display: none; } }
   @media (max-height: 500px) { .crash-side button { width: 64px; height: 64px; } .crash-title { font-size: 1.05rem; } }
@@ -397,7 +400,7 @@
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
   <div style="text-align:center"><button class="grownups-link" onclick="show('grownups')">👤 Grown-ups</button></div>
-  <div class="ver">v3.15</div>
+  <div class="ver">v3.16</div>
 </div>
 
 <!-- REWARDS -->
@@ -1144,6 +1147,8 @@ const CrashIt = {
     show('crashit');
     this.init();
     document.getElementById('crashBtnsR').style.display = mode === 'bot' ? 'none' : 'flex';
+    const deck = document.getElementById('crashDeck');
+    if (deck && deck.classList) deck.classList.toggle('deck-bot', mode === 'bot');
     this.newMatch();
   },
   newMatch() {
