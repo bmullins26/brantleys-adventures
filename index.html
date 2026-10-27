@@ -401,7 +401,7 @@
     <button class="home-card tint-yellow wide" onclick="show('rewards')"><span class="hc-icon">🏆</span><span class="hc-title">My Rewards</span><span class="hc-sub" id="rewardsSub">⭐ 0 stars</span></button>
   </div>
   <div style="text-align:center"><button class="grownups-link" onclick="show('grownups')">👤 Grown-ups</button></div>
-  <div class="ver">v3.17</div>
+  <div class="ver">v3.18</div>
 </div>
 
 <!-- REWARDS -->
@@ -3782,6 +3782,12 @@ const COLOR_PALETTE = [
   '#fab1a2', '#e17055', '#d63031', '#ffeaa7',
   '#8d5a2b', '#a47148', '#b2bec3', '#2f3542',
 ];
+
+// skin tones, lightest to deepest — for coloring the kids
+const SKIN_TONES = [
+  '#ffdfc4', '#f0c8a0', '#e0ac69',
+  '#c68642', '#8d5524', '#5c3a21',
+];
 const ERASER = '#ffffff';
 
 const ColorFun = {
@@ -3975,6 +3981,11 @@ const ColorFun = {
       return b;
     };
     COLOR_PALETTE.forEach((c) => mk(c, 'color'));
+    const skinLbl = document.createElement('div');
+    skinLbl.textContent = 'Skin tones';
+    skinLbl.style.cssText = 'flex-basis:100%;text-align:center;font-weight:bold;opacity:.7;margin-top:4px';
+    p.appendChild(skinLbl);
+    SKIN_TONES.forEach((c) => mk(c, 'skin tone'));
     mk(ERASER, 'eraser');
   },
 
